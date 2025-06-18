@@ -1,0 +1,34 @@
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-color: linear-gradient(to bottom, #dbeafe, #93c5fd); /* light blue */
+}
+
+.label {
+    -fx-font-size: 20px;
+    -fx-text-fill: #1e3a8a; /* navy blue */
+    -fx-font-weight: bold;
+}
+
+.text-field, .password-field {
+    -fx-pref-width: 250px;
+    -fx-padding: 10px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: #93c5fd;
+}
+
+.button {
+    -fx-background-color: #3b82f6;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10 20;
+}
+
+.button:hover {
+    -fx-background-color: #2563eb;
+}
+
+.hyperlink {
+    -fx-text-fill: #1e40af;
+}

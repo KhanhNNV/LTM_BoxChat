@@ -759,8 +759,6 @@ public class PrivateRoomController extends BaseController {
             infoNameGroup.setText(currentRoom.getName());
             infoIdGroup.setText(String.valueOf(currentRoom.getId()));
             infoPassGroup.setText(currentRoom.getPassword());
-            System.out.println("User is leader. Leader ID: " + currentRoom.getLeaderId() +
-                    ", User ID: " + currentUser.getId());
         } else {
             infoNameGroup.setText("Không có quyền xem");
             infoIdGroup.setText("");

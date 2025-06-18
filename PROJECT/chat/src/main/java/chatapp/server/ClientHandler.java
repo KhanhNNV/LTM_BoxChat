@@ -184,20 +184,7 @@ public class ClientHandler implements Runnable {
                     "Room not found or password incorrect."));
         }
     }
-//
-//    private void handleSendMessage(String content) throws SQLException {
-//        if (currentUser == null || currentRoomId == -1) {
-//            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "You are not in a room."));
-//            return;
-//        }
-//        Message newMessage = groupService.saveMessage(currentUser.getId(), currentRoomId,
-//                content);
-//        if (newMessage != null) {
-//            NetworkMessage broadcastMsg = new NetworkMessage(NetworkMessage.MessageType.RECEIVE_MESSAGE, newMessage);
-//            // Gửi cho tất cả mọi người trong phòng, bao gồm cả người gửi để xác nhận
-//            Server.broadcastMessage(currentRoomId, broadcastMsg, null);
-//        }
-//    }
+
 
     private void handleSendMessage(String content) throws SQLException {
         if (currentUser == null || currentRoomId == -1) {
@@ -321,58 +308,7 @@ public class ClientHandler implements Runnable {
                 members
         ));
     }
-//    private void handleJoinExistingRoom(int roomId) throws SQLException {
-//        // 1. Kiểm tra đăng nhập
-//        if (currentUser == null) {
-//            sendMessage(new NetworkMessage(
-//                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-//                    "Bạn cần đăng nhập trước"
-//            ));
-//            return;
-//        }
-//
-//        // 2. Kiểm tra phòng tồn tại
-//        Room room = groupService.getGroupById(roomId);
-//        if (room == null) {
-//            sendMessage(new NetworkMessage(
-//                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-//                    "Phòng không tồn tại"
-//            ));
-//            return;
-//        }
-//
-//        // 3. Kiểm tra người dùng đã tham gia phòng chưa
-//        if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
-//            sendMessage(new NetworkMessage(
-//                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-//                    "Bạn chưa tham gia phòng này"
-//            ));
-//            return;
-//        }
-//
-//        // 4. Cập nhật trạng thái
-//        this.currentRoomId = roomId;
-//        Server.addUserToRoom(roomId, this);
-//
-//        // 5. Gửi phản hồi thành công
-//        sendMessage(new NetworkMessage(
-//                NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-//                room
-//        ));
-//
-//        // 6. Thông báo cho thành viên khác
-//        Message notification = new Message(
-//                0,
-//                "System",
-//                roomId,
-//                currentUser.getUsername() + " đã tham gia phòng"
-//        );
-//        Server.broadcastMessage(
-//                roomId,
-//                new NetworkMessage(NetworkMessage.MessageType.RECEIVE_MESSAGE, notification),
-//                this
-//        );
-//    }
+
 private void handleJoinExistingRoom(int roomId) throws SQLException {
     if (currentUser == null) {
         sendMessage(new NetworkMessage(

@@ -248,50 +248,6 @@ public class GroupService {
         return groups;
     }
 
-//    public List<Message> getRoomHistory(int roomId, int currentUserId) throws SQLException {
-//        List<Message> messages = new ArrayList<>();
-////        String sql = """
-////            SELECT m.id, m.user_id, u.fullname, m.group_id, m.content, m.send_at
-////            FROM messages m
-////            JOIN users u ON m.user_id = u.id
-////            WHERE m.group_id = ?
-////            ORDER BY m.send_at ASC
-////            """;
-//            String sql = """
-//                SELECT m.id, m.user_id, u.fullname, m.group_id, m.content,
-//                       m.file_name, m.file_type, m.file_data, m.send_at
-//                FROM messages m
-//                JOIN users u ON m.user_id = u.id
-//                WHERE m.group_id = ?
-//                ORDER BY m.send_at ASC
-//                """;
-//
-//        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-//            stmt.setInt(1, roomId);
-//            ResultSet rs = stmt.executeQuery();
-//
-//            while (rs.next()) {
-//                Message message = new Message(
-//                        rs.getInt("user_id"),
-//                        rs.getString("fullname"),
-//                        rs.getInt("group_id"),
-//                        rs.getString("content")
-//                );
-//                message.setId(rs.getInt("id"));
-//                Timestamp ts = rs.getTimestamp("send_at", Calendar.getInstance(TimeZone.getTimeZone("Asia/Ho_Chi_Minh")));
-//                message.setSendAt(ts.toLocalDateTime());
-//                message.setFileName(rs.getString("file_name"));
-//                message.setFileType(rs.getString("file_type"));
-//                message.setFileData(rs.getBytes("file_data"));
-//
-////                // Mark if the message belongs to current user
-////                message.setOwnMessage(message.getUserId() == currentUserId);
-//
-//                messages.add(message);
-//            }
-//        }
-//        return messages;
-//    }
 
     public List<Message> getRoomHistory(int roomId, int currentUserId) throws SQLException {
         List<Message> messages = new ArrayList<>();

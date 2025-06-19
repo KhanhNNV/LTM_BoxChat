@@ -572,57 +572,119 @@ public class PrivateRoomController extends BaseController {
         });
     }
 
-    private void addTextMessageToUI(Message msg) {
-        HBox messageContainer = new HBox(10);
-        messageContainer.setAlignment(Pos.TOP_LEFT);
-        messageContainer.setPadding(new Insets(5));
-        messageContainer.setMaxWidth(580);
+//    private void addTextMessageToUI(Message msg) {
+//        HBox messageContainer = new HBox(10);
+//        messageContainer.setAlignment(Pos.TOP_LEFT);
+//        messageContainer.setPadding(new Insets(5));
+//        messageContainer.setMaxWidth(580);
+//
+//        // Avatar
+//        ImageView avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
+//        avatar.setFitWidth(42);
+//        avatar.setFitHeight(44);
+//        avatar.setPreserveRatio(true);
+//
+//        // Phần nội dung bên phải
+//        VBox contentBox = new VBox(3);
+//
+//        // Dòng thông tin người gửi và thời gian
+//        HBox infoBox = new HBox(10);
+//        Label nameLabel = new Label(msg.getFullname());
+//        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+//        Label timeLabel = new Label();
+//        if (msg.getSendAt() != null) {
+//            timeLabel.setText(msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy")));
+//        } else {
+//            timeLabel.setText(""); // hoặc "?" hay không hiển thị gì cả
+//        }
+//        //String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy"));
+//
+//        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+//
+//        infoBox.getChildren().addAll(nameLabel, timeLabel);
+//
+//        // Phần nội dung tin nhắn
+//        Text messageText = new Text(msg.getContent());
+//        messageText.setWrappingWidth(480);
+//
+//        TextFlow messageFlow = new TextFlow(messageText);
+//        messageFlow.setMaxWidth(480);
+//        messageFlow.setPadding(new Insets(5));
+//        messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+//
+//        contentBox.getChildren().addAll(infoBox, messageFlow);
+//        messageContainer.getChildren().addAll(avatar, contentBox);
+//
+//        Platform.runLater(() -> {
+//            messageFlow.applyCss();
+//            messageFlow.layout();
+//            messageContainer.setMinHeight(messageFlow.getHeight() + 30);
+//            chatBox.getChildren().add(messageContainer);
+//            scrollToBottom();
+//        });
+//    }
+private void addTextMessageToUI(Message msg) {
+    HBox messageContainer = new HBox(10);
+    messageContainer.setAlignment(Pos.TOP_LEFT);
+    messageContainer.setPadding(new Insets(5));
+    messageContainer.setMaxWidth(580);
 
-        // Avatar
-        ImageView avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
-        avatar.setFitWidth(42);
-        avatar.setFitHeight(44);
-        avatar.setPreserveRatio(true);
-
-        // Phần nội dung bên phải
-        VBox contentBox = new VBox(3);
-
-        // Dòng thông tin người gửi và thời gian
-        HBox infoBox = new HBox(10);
-        Label nameLabel = new Label(msg.getFullname());
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
-        Label timeLabel = new Label();
-        if (msg.getSendAt() != null) {
-            timeLabel.setText(msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy")));
-        } else {
-            timeLabel.setText(""); // hoặc "?" hay không hiển thị gì cả
-        }
-        //String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm dd-MM-yyyy"));
-
-        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
-
-        infoBox.getChildren().addAll(nameLabel, timeLabel);
-
-        // Phần nội dung tin nhắn
-        Text messageText = new Text(msg.getContent());
-        messageText.setWrappingWidth(480);
-
-        TextFlow messageFlow = new TextFlow(messageText);
-        messageFlow.setMaxWidth(480);
-        messageFlow.setPadding(new Insets(5));
-        messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
-
-        contentBox.getChildren().addAll(infoBox, messageFlow);
-        messageContainer.getChildren().addAll(avatar, contentBox);
-
-        Platform.runLater(() -> {
-            messageFlow.applyCss();
-            messageFlow.layout();
-            messageContainer.setMinHeight(messageFlow.getHeight() + 30);
-            chatBox.getChildren().add(messageContainer);
-            scrollToBottom();
-        });
+    // Avatar
+    ImageView avatar;
+    if ("Langflow AI".equalsIgnoreCase(msg.getFullname())) {
+        avatar = new ImageView(new Image(getClass().getResource("/image/icon_ai.png").toExternalForm()));
+    } else {
+        avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
     }
+    avatar.setFitWidth(42);
+    avatar.setFitHeight(44);
+    avatar.setPreserveRatio(true);
+
+    // Phần nội dung bên phải
+    VBox contentBox = new VBox(3);
+
+    // Dòng thông tin người gửi và thời gian
+    HBox infoBox = new HBox(10);
+    Label nameLabel = new Label(msg.getFullname());
+    nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+    Label timeLabel = new Label();
+    if (msg.getSendAt() != null) {
+        timeLabel.setText(msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy")));
+    } else {
+        timeLabel.setText("");
+    }
+    timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+
+    infoBox.getChildren().addAll(nameLabel, timeLabel);
+
+    // Nội dung tin nhắn
+    Text messageText = new Text(msg.getContent());
+    messageText.setWrappingWidth(480);
+
+    TextFlow messageFlow = new TextFlow(messageText);
+    messageFlow.setMaxWidth(480);
+    messageFlow.setPadding(new Insets(5));
+
+    // Nền đặc biệt nếu là AI
+    if ("Langflow AI".equalsIgnoreCase(msg.getFullname())) {
+        messageFlow.setStyle("-fx-background-color: #e0f7fa; -fx-background-radius: 10; -fx-border-color: #00acc1; -fx-border-radius: 10;");
+    } else {
+        messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+    }
+
+    contentBox.getChildren().addAll(infoBox, messageFlow);
+    messageContainer.getChildren().addAll(avatar, contentBox);
+
+    Platform.runLater(() -> {
+        messageFlow.applyCss();
+        messageFlow.layout();
+        messageContainer.setMinHeight(messageFlow.getHeight() + 30);
+        chatBox.getChildren().add(messageContainer);
+        scrollToBottom();
+    });
+}
+
 
     private void addFileMessageToUI(Message msg) {
         HBox messageContainer = new HBox(10);

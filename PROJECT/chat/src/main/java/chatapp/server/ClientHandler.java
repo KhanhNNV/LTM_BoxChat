@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.sql.SQLException; // Tái sử dụng DBConfig
 import java.util.Base64;
 import java.util.List;
+import chatapp.service.AIService;
 
 import chatapp.model.*;
 
@@ -186,13 +187,65 @@ public class ClientHandler implements Runnable {
     }
 
 
+//    private void handleSendMessage(String content) throws SQLException {
+//        if (currentUser == null || currentRoomId == -1) {
+//            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "You are not in a room."));
+//            return;
+//        }
+//
+//        // Kiểm tra nếu là file (content bắt đầu bằng FILE_PREFIX)
+//        if (content.startsWith("FILE:")) {
+//            String[] parts = content.split(":", 5);
+//            if (parts.length == 5) {
+//                String fileName = parts[1];
+//                String fileType = parts[2];
+//                int fileSize = Integer.parseInt(parts[3]);
+//                String base64Data = parts[4];
+//
+//                // Chuyển base64 thành byte[]
+//                byte[] fileData = Base64.getDecoder().decode(base64Data);
+//
+//                Message newMessage = groupService.saveFileMessage(
+//                        currentUser.getId(),
+//                        currentRoomId,
+//                        fileName,
+//                        fileType,
+//                        fileData
+//                );
+//
+//                if (newMessage != null) {
+//                    NetworkMessage broadcastMsg = new NetworkMessage(
+//                            NetworkMessage.MessageType.RECEIVE_MESSAGE,
+//                            newMessage
+//                    );
+//                    Server.broadcastMessage(currentRoomId, broadcastMsg, null);
+//                }
+//            }
+//        } else {
+//            // Xử lý tin nhắn bình thường
+//            Message newMessage = groupService.saveMessage(
+//                    currentUser.getId(),
+//                    currentRoomId,
+//                    content
+//            );
+//
+//            if (newMessage != null) {
+//                NetworkMessage broadcastMsg = new NetworkMessage(
+//                        NetworkMessage.MessageType.RECEIVE_MESSAGE,
+//                        newMessage
+//                );
+//                Server.broadcastMessage(currentRoomId, broadcastMsg, null);
+//            }
+//        }
+//    }
+
     private void handleSendMessage(String content) throws SQLException {
         if (currentUser == null || currentRoomId == -1) {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "You are not in a room."));
             return;
         }
 
-        // Kiểm tra nếu là file (content bắt đầu bằng FILE_PREFIX)
+        // Nếu là file gửi (FILE:...)
         if (content.startsWith("FILE:")) {
             String[] parts = content.split(":", 5);
             if (parts.length == 5) {
@@ -201,7 +254,6 @@ public class ClientHandler implements Runnable {
                 int fileSize = Integer.parseInt(parts[3]);
                 String base64Data = parts[4];
 
-                // Chuyển base64 thành byte[]
                 byte[] fileData = Base64.getDecoder().decode(base64Data);
 
                 Message newMessage = groupService.saveFileMessage(
@@ -220,8 +272,101 @@ public class ClientHandler implements Runnable {
                     Server.broadcastMessage(currentRoomId, broadcastMsg, null);
                 }
             }
-        } else {
-            // Xử lý tin nhắn bình thường
+        }
+
+        // Nếu là câu hỏi cho AI
+//        else if (content.startsWith("@ai ")) {
+//            String question = content.substring(4).trim();
+//
+//            // 1. Lưu câu hỏi của người dùng vào DB như tin nhắn bình thường
+//            Message userMsg = groupService.saveMessage(
+//                    currentUser.getId(),
+//                    currentRoomId,
+//                    content
+//            );
+//
+//            if (userMsg != null) {
+//                Server.broadcastMessage(currentRoomId, new NetworkMessage(
+//                        NetworkMessage.MessageType.RECEIVE_MESSAGE,
+//                        userMsg
+//                ), null);
+//            }
+//
+//            // 2. Gửi câu hỏi đến Langflow AI
+//            AIService aiService = new AIService();
+//            String aiAnswer = aiService.callLangflowAPI(question); // Anh/chị cần có hàm này phía dưới
+//
+//            // 3. Tạo tin nhắn giả lập từ AI và broadcast
+//            if (aiAnswer != null && !aiAnswer.isEmpty()) {
+//                Message aiMsg = groupService.saveMessage(
+//                        -1, // ID -1 cho biết đây là "user AI"
+//                        currentRoomId,
+//                        aiAnswer
+//                );
+//
+//                if (aiMsg != null) {
+//                    aiMsg.setFullname("Langflow AI"); // Hiển thị là AI
+//                    Server.broadcastMessage(currentRoomId, new NetworkMessage(
+//                            NetworkMessage.MessageType.RECEIVE_MESSAGE,
+//                            aiMsg
+//                    ), null);
+//                }
+//            }
+//        }
+        else if (content.startsWith("@ai ")) {
+            String question = content.substring(4).trim();
+
+            // Lưu câu hỏi của người dùng
+            Message userMsg = groupService.saveMessage(
+                    currentUser.getId(),
+                    currentRoomId,
+                    content
+            );
+
+            if (userMsg != null) {
+                Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                        NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                        userMsg
+                ), null);
+            }
+
+            // Tạo thread riêng để gọi AI tránh block main thread
+            new Thread(() -> {
+                try {
+                    AIService aiService = new AIService();
+                    String aiAnswer = aiService.callLangflowAPI(question);
+
+                    if (aiAnswer != null && !aiAnswer.isEmpty()) {
+                        Message aiMsg = groupService.saveMessage(
+                                -1,
+                                currentRoomId,
+                                aiAnswer
+                        );
+
+                        if (aiMsg != null) {
+                            aiMsg.setFullname("Langflow AI");
+                            Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                                    NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                                    aiMsg
+                            ), null);
+
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // Gửi thông báo lỗi về client
+                    Message errorMsg = new Message(-1, "System", currentRoomId,
+                            "Lỗi khi gọi AI: " + e.getMessage());
+                    Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                            NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                            errorMsg
+                    ), null);
+                }
+            }).start();
+        }
+
+        // Tin nhắn văn bản bình thường
+        else {
             Message newMessage = groupService.saveMessage(
                     currentUser.getId(),
                     currentRoomId,
@@ -237,6 +382,7 @@ public class ClientHandler implements Runnable {
             }
         }
     }
+
 
     private void handleGetUserRequest() throws SQLException {
         User user = userService.getUserById(currentUser.getId());

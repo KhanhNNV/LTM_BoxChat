@@ -1,7 +1,12 @@
 // TẠO FILE MỚI: src/main/java/chatapp/server/GroupService.java
 package chatapp.server;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.math.RoundingMode;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;

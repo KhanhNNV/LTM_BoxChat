@@ -23,4 +23,5 @@ module chatapp {
     exports chatapp.server;
 
     requires java.sql;
+    requires jbcrypt;
 }

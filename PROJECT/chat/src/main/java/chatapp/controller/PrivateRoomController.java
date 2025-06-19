@@ -353,33 +353,17 @@ public class PrivateRoomController extends BaseController {
             groupPane.setLayoutY(layoutY);
             groupPane.setCursor(Cursor.HAND);
 
-            // Xóa tất cả style class trước khi thêm mới
+            // Xóa các class cũ và thêm class cơ sở
             groupPane.getStyleClass().clear();
-            groupPane.getStyleClass().add("vien-danh-sach-nhom");
+            groupPane.getStyleClass().add("group-list-item");
 
-            // Thêm style class tùy theo trạng thái
+            // Nếu phòng này là phòng hiện tại, thêm class 'active'
             if (currentRoom != null && room.getId() == currentRoom.getId()) {
-                groupPane.getStyleClass().add("active-room");
-            } else {
-                groupPane.getStyleClass().add("normal-room");
+                groupPane.getStyleClass().add("active");
             }
 
-            // Thêm hiệu ứng hover
-            groupPane.setOnMouseEntered(e -> {
-                if (!(currentRoom != null && room.getId() == currentRoom.getId())) {
-                    groupPane.setStyle("-fx-background-color: white;" );
-                }
-            });
-
-            groupPane.setOnMouseExited(e -> {
-                // Luôn reset về màu đúng theo trạng thái active khi chuột rời đi
-                if (currentRoom != null && room.getId() == currentRoom.getId()) {
-                    groupPane.setStyle("-fx-background-color: #a6a6a6;");
-                } else {
-                    groupPane.setStyle("-fx-background-color: #d9d9d9;");
-                }
-            });
-
+            // Bỏ hoàn toàn các listener setOnMouseEntered và setOnMouseExited
+            // vì CSS đã tự xử lý trạng thái :hover cho chúng ta.
 
             // Thêm sự kiện click
             groupPane.setOnMouseClicked(e -> {

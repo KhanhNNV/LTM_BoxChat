@@ -13,19 +13,12 @@ import chatapp.model.Room;
 import chatapp.model.User;
 import chatapp.service.DBConfig;
 import chatapp.server.UserService;
-import chatapp.service.EncryptionService;
 
 public class GroupService {
     private Connection connection;
-    private EncryptionService encryptionService; // Thêm đối tượng mã hóa
 
     public GroupService() throws SQLException {
         this.connection = DBConfig.getConnection();
-        try {
-            this.encryptionService = new EncryptionService(); // Khởi tạo
-        } catch (Exception e) {
-            throw new RuntimeException("Could not initialize EncryptionService", e);
-        }
     }
 
     public Room createGroup(String name, String password, int leaderId) throws SQLException {
@@ -37,7 +30,7 @@ public class GroupService {
 
         connection.setAutoCommit(false);
         try (PreparedStatement stmtGroup = connection.prepareStatement(sqlGroup, Statement.RETURN_GENERATED_KEYS);
-                PreparedStatement stmtUserGroup = connection.prepareStatement(sqlUserGroup)) {
+             PreparedStatement stmtUserGroup = connection.prepareStatement(sqlUserGroup)) {
 
             stmtGroup.setString(1, name);
             stmtGroup.setString(2, password);
@@ -143,28 +136,21 @@ public class GroupService {
 //        return null;
 //    }
 
-    // THAY ĐỔI PHƯƠNG THỨC NÀY
     public Message saveMessage(int userId, int groupId, String content) throws SQLException {
-        // Mã hóa nội dung trước khi lưu
-        String encryptedContent = encryptionService.encrypt(content);
-        if (encryptedContent == null) return null; // Không lưu nếu mã hóa lỗi
-
         String sql = "INSERT INTO Messages (user_id, group_id, content) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setInt(1, userId);
             stmt.setInt(2, groupId);
-            stmt.setString(3, encryptedContent); // Lưu nội dung đã mã hóa
+            stmt.setString(3, content);
             stmt.executeUpdate();
 
             ResultSet rs = stmt.getGeneratedKeys();
             if (rs.next()) {
-                // ... (phần code lấy fullname giữ nguyên)
-                User sender = new UserService().getUserById(userId);
+                UserService userService = new UserService();
+                User sender = userService.getUserById(userId);
                 String fullname = (sender != null && sender.getFullName() != null)
                         ? sender.getFullName()
                         : "Unknown";
-
-                // Quan trọng: Trả về Message với nội dung GỐC (chưa mã hóa)
                 Message msg = new Message(userId, fullname, groupId, content);
                 msg.setId(rs.getInt(1));
                 msg.setSendAt(java.time.LocalDateTime.now());
@@ -292,17 +278,11 @@ public class GroupService {
                     );
                     message.setFile(true); // <-- QUAN TRỌNG: Đánh dấu là tin nhắn file
                 } else {
-
-                    // Lấy nội dung đã mã hóa từ DB
-                    String encryptedContent = rs.getString("content");
-                    // Giải mã nó
-                    String decryptedContent = encryptionService.decrypt(encryptedContent);
-
                     message = new Message(
                             rs.getInt("user_id"),
                             rs.getString("fullname"),
                             rs.getInt("group_id"),
-                            decryptedContent // Sử dụng nội dung đã giải mã
+                            rs.getString("content")
                     );
                 }
                 message.setId(rs.getInt("id"));

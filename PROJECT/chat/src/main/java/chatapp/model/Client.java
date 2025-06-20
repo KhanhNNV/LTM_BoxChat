@@ -6,9 +6,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.function.Consumer;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
 
 import javafx.application.Platform;
 
@@ -31,17 +28,7 @@ public class Client {
 
     public void connect(String host, int port) throws IOException {
         if (socket == null || socket.isClosed()) {
-            // --- BẮT ĐẦU THAY ĐỔI ---
-            // 1. Lấy Factory để tạo SSLSocket
-            SSLSocketFactory sf = (SSLSocketFactory) SSLSocketFactory.getDefault();
-
-            // 2. Tạo một SSLSocket thay vì Socket thông thường
-            socket = (SSLSocket) sf.createSocket(host, port);
-
-            // 3. (Tùy chọn) Bắt đầu "bắt tay" (handshake) ngay lập tức để phát hiện lỗi sớm
-            ((SSLSocket) socket).startHandshake();
-            // --- KẾT THÚC THAY ĐỔI ---
-
+            socket = new Socket(host, port);
             out = new ObjectOutputStream(socket.getOutputStream());
             in = new ObjectInputStream(socket.getInputStream());
             startListening();

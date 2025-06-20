@@ -7,7 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.mindrot.jbcrypt.BCrypt;
 
 import chatapp.model.User;
 import chatapp.service.DBConfig;
@@ -19,52 +18,36 @@ public class UserService {
         this.connection = DBConfig.getConnection();
     }
 
-    // Phương thức này thảnh đổi để sử dụng mật khẩu đã hash
     public User login(String username, String password) throws SQLException {
-        String sql = "SELECT * FROM Users WHERE username = ?";
+        String sql = "SELECT * FROM Users WHERE username = ? AND password = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, username);
+            stmt.setString(2, password);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                // Lấy hash từ DB
-                String hashedPasswordFromDB = rs.getString("password");
-                // So sánh mật khẩu người dùng nhập với hash trong DB
-                if (BCrypt.checkpw(password, hashedPasswordFromDB)) {
-                    // Nếu khớp, trả về đối tượng User
-                    User user = new User();
-                    user.setId(rs.getInt("id"));
-                    user.setUsername(rs.getString("username"));
-                    user.setFullName(rs.getString("fullname"));
-                    // Không cần set password ở đây nữa để tăng bảo mật
-                    return user;
-                }
+                User user = new User(rs.getString("username"), rs.getString("password"));
+                user.setId(rs.getInt("id"));
+                return user;
             }
         }
-        // Sai username hoặc password
         return null;
     }
 
-    // Phương thức thay đổi để hash mật khẩu
     public String register(String username, String password, String gmail, String fullName) throws SQLException {
         if (userExists(username)) {
-            return "Username already exists";
+            return "Username already exists"; // Tên đăng nhập đã tồn tại
         }
         if (gmailExists(gmail)) {
-            return "Gmail already exists";
+            return "Gmail already exists"; // Gmail đã tồn tại
         }
-
-        // HASH mật khẩu trước khi lưu
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-
-        String sql = "INSERT INTO Users (username, password, gmail, fullname) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Users (username, password, gmail, fullname ) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, username);
-            stmt.setString(2, hashedPassword); // Lưu mật khẩu đã hash
-            stmt.setString(3, gmail);
-            stmt.setString(4, fullName);
+            stmt.setString(2, password);
+            stmt.setString(3, gmail); // Gmail can be set to empty or null
+            stmt.setString(4, fullName); // Full name can be set to empty or null
             int result = stmt.executeUpdate();
-            // Sửa lại điều kiện trả về cho đúng logic bên RegisterController
-            return result > 0 ? "SUCCESS" : "Registration failed.";
+            return result > 0 ? "Registration successful" : "Registration failed.";
         }
     }
 

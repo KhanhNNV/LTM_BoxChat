@@ -7,7 +7,6 @@
     -fx-font-size: 20px;
     -fx-text-fill: #1e3a8a; /* navy blue */
     -fx-font-weight: bold;
-    -fx-text-background-color: transparent; /* Thêm dòng này */
 }
 
 .text-field, .password-field {
@@ -16,8 +15,6 @@
     -fx-background-radius: 8px;
     -fx-border-radius: 8px;
     -fx-border-color: #93c5fd;
-    -fx-text-fill: black; /* Thêm nếu chứa văn bản */
-    -fx-text-background-color: white; /* Thêm dòng này */
 }
 
 .button {

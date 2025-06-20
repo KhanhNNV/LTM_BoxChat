@@ -3,25 +3,18 @@ package chatapp.controller;
 
 import chatapp.Main;
 import chatapp.model.*;
-
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
-
-
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-
 import javafx.geometry.Side;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
-
-import javafx.scene.Cursor;
-
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -40,21 +33,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-
 import java.util.*;
 import java.io.ByteArrayInputStream;
 import javafx.event.Event;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.util.Duration;
-
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.io.ByteArrayInputStream;
-import javafx.event.Event;
-
 
 public class PrivateRoomController extends BaseController {
     @FXML
@@ -135,11 +119,9 @@ public class PrivateRoomController extends BaseController {
     private User currentUser;
     private boolean roomListenersInitialized = false;
 
-
     @FXML private TextField searchField;
     private List<Message> allMessages = new ArrayList<>();
     private int currentSearchIndex = -1;
-
 
     // Khởi tạo
     @FXML
@@ -154,7 +136,6 @@ public class PrivateRoomController extends BaseController {
         emojiOverlay.setOnMouseClicked(e -> {
             hideEmojiPane(null);
         });
-
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.isEmpty()) {
                 resetSearchHighlight();
@@ -278,10 +259,6 @@ public class PrivateRoomController extends BaseController {
         searchResultsMenu.show(searchField, Side.BOTTOM, 0, 0);
     }
     //xulytim kiem
-
-
-    }
-
     // Được gọi từ controller trước đó để truyền thông tin phòng
 
     // Thêm phương thức khởi tạo emoji
@@ -476,7 +453,6 @@ public class PrivateRoomController extends BaseController {
                 }
                 break;
             // Xử lý các loại message khác...
-
             case CHANGE_PASSWORD_SUCCESS:
                 // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
                 showAlert("Thành công", (String) message.getPayload());
@@ -486,7 +462,6 @@ public class PrivateRoomController extends BaseController {
                 // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
                 showAlert("Lỗi", (String) message.getPayload());
                 break;
-
         }
     }
 
@@ -516,7 +491,6 @@ public class PrivateRoomController extends BaseController {
             groupPane.setLayoutY(layoutY);
             groupPane.setCursor(Cursor.HAND);
 
-
             // Xóa tất cả style class trước khi thêm mới
             groupPane.getStyleClass().clear();
             groupPane.getStyleClass().add("vien-danh-sach-nhom");
@@ -525,17 +499,6 @@ public class PrivateRoomController extends BaseController {
             if (currentRoom != null && room.getId() == currentRoom.getId()) {
                 groupPane.getStyleClass().add("active-room");
             } else {
-
-            // Xóa các class cũ và thêm class cơ sở
-            groupPane.getStyleClass().clear();
-            groupPane.getStyleClass().add("group-list-item");
-
-            // Nếu phòng này là phòng hiện tại, thêm class 'active'
-            if (currentRoom != null && room.getId() == currentRoom.getId()) {
-                groupPane.getStyleClass().add("active");
-            }
-            else {
-
                 groupPane.getStyleClass().add("normal-room");
             }
 
@@ -674,7 +637,6 @@ public class PrivateRoomController extends BaseController {
         Client.getInstance().sendMessage(request);
     }
 
-
     // Cập nhật khi tải lịch sử
 //    private void showRoomHistory(List<Message> messages) {
 //        chatBox.getChildren().clear();
@@ -708,16 +670,6 @@ public class PrivateRoomController extends BaseController {
     }
 
     //code mơi
-
-
-
-    private void showRoomHistory(List<Message> messages) {
-        chatBox.getChildren().clear();
-        for (Message msg : messages) {
-            addMessageToUI(msg);
-        }
-    }
-
 
 
 
@@ -772,7 +724,6 @@ public class PrivateRoomController extends BaseController {
             scrollToBottom();
         });
     }
-
 
     //    private void addMessageToUI(Message msg) {
 //        Platform.runLater(() -> {
@@ -913,19 +864,6 @@ public class PrivateRoomController extends BaseController {
     }
 
     /// /code moi
-
-
-    private void addMessageToUI(Message msg) {
-        Platform.runLater(() -> {
-            if (msg.isFile()) {
-                addFileMessageToUI(msg);
-            } else {
-                addTextMessageToUI(msg);
-            }
-            scrollToBottom();
-        });
-    }
-
 
     private void addTextMessageToUI(Message msg) {
         HBox messageContainer = new HBox(10);
@@ -1094,9 +1032,7 @@ public class PrivateRoomController extends BaseController {
             Platform.runLater(() -> {
                 infoFullNameUser.setText(currentUser.getFullName());
                 infoUserNameUser.setText(currentUser.getUsername());
-
-                infoPassUser.setText(currentUser.getPassword()); // Note: Consider security implications
-
+//                infoPassUser.setText(currentUser.getPassword()); // Note: Consider security implications
                 infoGmailUser.setText(currentUser.getGmail());
             });
         }
@@ -1221,7 +1157,6 @@ public class PrivateRoomController extends BaseController {
         alert.setContentText(message);
         alert.showAndWait();
     }
-
     /// / them codde sua mk
     @FXML
     private void handleChangePassword(ActionEvent event) {
@@ -1305,6 +1240,5 @@ public class PrivateRoomController extends BaseController {
             System.out.println("Change password request sent!");
         });
     }
-
 }
 

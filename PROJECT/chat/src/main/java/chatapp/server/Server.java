@@ -82,4 +82,13 @@ public class Server {
             System.out.println("Could not notify user ID " + userIdToNotify + " because they are offline.");
         }
     }
+
+    public static void addOnlineUser(int userId, ClientHandler handler) {
+        onlineUsers.put(userId, handler);
+    }
+
+    public static void removeOnlineUser(int userId) {
+        onlineUsers.remove(userId);
+    }
+
 }

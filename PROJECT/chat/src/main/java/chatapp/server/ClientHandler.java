@@ -64,6 +64,9 @@ public class ClientHandler implements Runnable {
             if (currentRoomId != -1) {
                 Server.removeUserFromRoom(currentRoomId, this);
             }
+            if (currentUser != null) {
+                Server.removeOnlineUser(currentUser.getId()); // THÊM DÒNG NÀY
+            }
             try {
                 clientSocket.close();
             } catch (IOException e) {
@@ -140,15 +143,27 @@ public class ClientHandler implements Runnable {
         }
     }
 
+//    private void handleLogin(User user) throws SQLException {
+//        User loggedInUser = userService.login(user.getUsername(), user.getPassword());
+//        if (loggedInUser != null) {
+//            this.currentUser = loggedInUser;
+//            sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_SUCCESS, loggedInUser));
+//        } else {
+//            sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_FAILURE, "Invalid username or password."));
+//        }
+//    }
+
     private void handleLogin(User user) throws SQLException {
         User loggedInUser = userService.login(user.getUsername(), user.getPassword());
         if (loggedInUser != null) {
             this.currentUser = loggedInUser;
+            Server.addOnlineUser(loggedInUser.getId(), this);// THÊM DÒNG NÀY
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_SUCCESS, loggedInUser));
         } else {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_FAILURE, "Invalid username or password."));
         }
     }
+
 
     private void handleRegister(User user) throws SQLException {
         String result = userService.register(user);

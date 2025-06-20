@@ -189,7 +189,9 @@
                                 <!--                code cu-->
                                 <!--                them moi-->
                                 <!-- Trong phần headerChat -->
-                                <HBox fx:id="searchPopup" prefHeight="46.0" prefWidth="241.0" visible="true">
+                                <!-- Thay thế phần searchPopup hiện tại bằng đoạn code này -->
+                                <!-- Thay thế phần searchPopup hiện tại bằng đoạn code này -->
+                                <HBox fx:id="searchPopup" prefHeight="46.0" prefWidth="241.0" visible="false">
                                     <children>
                                         <StackPane prefHeight="46.0" prefWidth="233.0">
                                             <children>
@@ -326,6 +328,30 @@
                                         <Font name="System Bold" size="12.0" />
                                     </font>
                                 </Button>
+<!--                                code cu-->
+<!--                                <HBox alignment="CENTER_LEFT" prefHeight="31.0" prefWidth="362.0">-->
+<!--                                    <children>-->
+<!--                                        <Label prefHeight="22.0" prefWidth="128.0" text="Tên hiển thị:  ">-->
+<!--                                            <font>-->
+<!--                                                <Font name="System Bold" size="15.0" />-->
+<!--                                            </font>-->
+<!--                                        </Label>-->
+<!--                                        <Text fx:id="infoFullNameUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[FullName]" wrappingWidth="205.33668518066406" />-->
+<!--                                        <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">-->
+<!--                                            <image>-->
+<!--                                                <Image url="@../image/icon_chinhsua.png" />-->
+<!--                                            </image>-->
+<!--                                            <cursor>-->
+<!--                                                <Cursor fx:constant="HAND" />-->
+<!--                                            </cursor>-->
+<!--                                        </ImageView>-->
+<!--                                    </children>-->
+<!--                                    <VBox.margin>-->
+<!--                                        <Insets bottom="5.0" left="5.0" right="5.0" top="10.0" />-->
+<!--                                    </VBox.margin>-->
+<!--                                </HBox>-->
+<!--                                code cu-->
+<!--                                code moi-->
                                 <HBox alignment="CENTER_LEFT" prefHeight="31.0" prefWidth="362.0">
                                     <children>
                                         <Label prefHeight="22.0" prefWidth="128.0" text="Tên hiển thị:  ">
@@ -334,7 +360,7 @@
                                             </font>
                                         </Label>
                                         <Text fx:id="infoFullNameUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[FullName]" wrappingWidth="205.33668518066406" />
-                                        <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
+                                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateFullName" pickOnBounds="true" preserveRatio="true">
                                             <image>
                                                 <Image url="@../image/icon_chinhsua.png" />
                                             </image>
@@ -347,6 +373,7 @@
                                         <Insets bottom="5.0" left="5.0" right="5.0" top="10.0" />
                                     </VBox.margin>
                                 </HBox>
+<!--                                code moi-->
                                 <HBox alignment="CENTER_LEFT" prefHeight="31.0" prefWidth="362.0">
                                     <children>
                                         <Label prefHeight="22.0" prefWidth="128.0" text="Tên đăng nhập:  ">
@@ -423,7 +450,7 @@
                                             </font>
                                         </Label>
                                         <Text fx:id="infoGmailUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[Gmail]" wrappingWidth="205.33668518066406" />
-                                        <ImageView fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
+                                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateGmail" pickOnBounds="true" preserveRatio="true">
                                             <image>
                                                 <Image url="@../image/icon_chinhsua.png" />
                                             </image>
@@ -483,13 +510,16 @@
                                 <Insets top="2.0" />
                             </HBox.margin>
                         </Text>
-                        <ImageView fitHeight="23.0" fitWidth="18.0" pickOnBounds="true" preserveRatio="true">
+                        <ImageView fitHeight="23.0" fitWidth="18.0" onMouseClicked="#handleUpdateRoomName" pickOnBounds="true" preserveRatio="true">
                             <image>
                                 <Image url="@../image/icon_chinhsua.png" />
                             </image>
                             <HBox.margin>
                                 <Insets top="2.0" />
                             </HBox.margin>
+                            <cursor>
+                                <Cursor fx:constant="HAND" />
+                            </cursor>
                         </ImageView>
                     </children>
                 </HBox>
@@ -515,13 +545,16 @@
                                 <Insets top="2.0" />
                             </HBox.margin>
                         </Text>
-                        <ImageView fitHeight="23.0" fitWidth="18.0" pickOnBounds="true" preserveRatio="true">
+                        <ImageView fitHeight="23.0" fitWidth="18.0" onMouseClicked="#handleUpdateRoomPassword" pickOnBounds="true" preserveRatio="true">
                             <image>
                                 <Image url="@../image/icon_chinhsua.png" />
                             </image>
                             <HBox.margin>
                                 <Insets top="2.0" />
                             </HBox.margin>
+                            <cursor>
+                                <Cursor fx:constant="HAND" />
+                            </cursor>
                         </ImageView>
                     </children>
                 </HBox>

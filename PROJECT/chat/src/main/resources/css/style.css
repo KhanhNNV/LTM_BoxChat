@@ -53,11 +53,13 @@
 .sender-name {
     -fx-font-weight: bold;
     -fx-font-size: 14px;
+    -fx-text-background-color: transparent; /* Mới thêm vào */
 }
 
 .message-time {
     -fx-text-fill: #666666;
     -fx-font-size: 12px;
+    -fx-text-background-color: transparent; /* Mới thêm vào */
 }
 
 /* Lớp phủ mờ */
@@ -89,6 +91,7 @@
     -fx-padding: 8px 15px;
     -fx-alignment: CENTER_LEFT;
     -fx-min-width: 150px;
+    -fx-text-background-color: transparent; /* Mới thêm vào */
 }
 
 .menu-item:hover {
@@ -126,6 +129,7 @@
 .text-flow {
     -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
     -fx-font-size: 14px;
+    -fx-text-background-color: transparent; /* Mới thêm vào */
 }
 
 .emoji-overlay {

@@ -518,6 +518,8 @@ public class PrivateRoomController extends BaseController {
                 }
             });
 
+            // Bỏ hoàn toàn các listener setOnMouseEntered và setOnMouseExited
+            // vì CSS đã tự xử lý trạng thái :hover cho chúng ta.
 
             // Thêm sự kiện click
             groupPane.setOnMouseClicked(e -> {

@@ -18,12 +18,19 @@ public class Main extends Application {
     public void start(Stage stage) throws Exception {
         primaryStage = stage;
 
+        // --- BẮT ĐẦU THAY ĐỔI ---
+        // Đặt các thuộc tính hệ thống cho Truststore của client
+        System.setProperty("javax.net.ssl.trustStore", "clienttruststore.jks");
+        System.setProperty("javax.net.ssl.trustStorePassword", "secretpassword"); // Dùng mật khẩu bạn đã tạo
+        // --- KẾT THÚC THAY ĐỔI ---
+
         // Kết nối tới Server khi ứng dụng khởi động
         try {
             Client.getInstance().connect("localhost", 12345); // Kết nối tới server tại localhost:12345
         } catch (IOException e) {
-            System.err.println("Could not connect to the server.");
-            // Có thể hiển thị một Alert ở đây
+            System.err.println("Could not connect to the secure server. Error: " + e.getMessage());
+            e.printStackTrace(); // In ra chi tiết lỗi để debug
+            // TODO: Hiển thị Alert cho người dùng
             return;
         }
 

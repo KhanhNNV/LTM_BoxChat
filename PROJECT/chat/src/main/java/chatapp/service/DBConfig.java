@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class DBConfig {
     private static final String URL = "jdbc:mysql://localhost:3306/DBChatBoxJDBC?useSSL=false&serverTimezone=UTC";
     private static final String USER = "root";
-    private static final String PASSWORD = "Dovanbinh@1512";
+    private static final String PASSWORD = "";
 
     public static Connection getConnection() throws SQLException {
         // Đảm bảo driver đã được load

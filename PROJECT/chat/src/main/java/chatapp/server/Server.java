@@ -1,6 +1,8 @@
 // TẠO FILE MỚI: src/main/java/chatapp/server/Server.java
 package chatapp.server;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -18,15 +20,33 @@ public class Server {
     private static final Map<Integer, List<ClientHandler>> roomClients = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
-        System.out.println("Server is running and waiting for clients...");
-        try (ServerSocket listener = new ServerSocket(PORT)) {
+
+        // --- BẮT ĐẦU THAY ĐỔI ---
+        // 1. Đặt các thuộc tính hệ thống để Java biết nơi tìm Keystore và mật khẩu của nó.
+        //    Đường dẫn tương đối này giả định các file .jks nằm ở thư mục gốc của dự án.
+        System.setProperty("javax.net.ssl.keyStore", "serverkeystore.jks");
+        System.setProperty("javax.net.ssl.keyStorePassword", "secretpassword"); // Dùng mật khẩu bạn đã tạo
+
+        // 2. Lấy Factory để tạo SSLServerSocket
+        SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+
+        // 3. Sử dụng SSLServerSocket thay vì ServerSocket
+        try (SSLServerSocket listener = (SSLServerSocket) ssf.createServerSocket(PORT)) {
+            // Tùy chọn: Yêu cầu Client phải xác thực (trong trường hợp này không cần)
+            // listener.setNeedClientAuth(false);
+
+            System.out.println("Secure Server is running and waiting for clients on port " + PORT);
+
             while (true) {
+                // 4. `accept()` bây giờ trả về một SSLSocket, nhưng chúng ta có thể coi nó
+                //    như một Socket bình thường vì nó kế thừa từ Socket.
                 Socket clientSocket = listener.accept();
                 System.out.println("New client connected: " + clientSocket.getInetAddress());
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 pool.execute(clientHandler);
             }
         }
+        // --- KẾT THÚC THAY ĐỔI ---
     }
 
     public static void broadcastMessage(int groupId, chatapp.model.NetworkMessage message, ClientHandler sender) {

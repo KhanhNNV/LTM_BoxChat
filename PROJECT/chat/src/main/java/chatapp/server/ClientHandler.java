@@ -467,7 +467,8 @@ public class ClientHandler implements Runnable {
 
             // 2. Gửi danh sách thành viên mới cho tất cả mọi người trong phòng
             List<User> updatedMembers = groupService.getMembersGroupList(currentRoomId);
-            Server.broadcastMessage(currentRoomId, new NetworkMessage(MessageType.MEMBER_LIST_UPDATE, updatedMembers),
+            Server.broadcastMessage(currentRoomId,
+                    new NetworkMessage(MessageType.MEMBERS_GROUP_RESPONSE, updatedMembers),
                     null);
 
             // 3. Tìm ClientHandler của người bị xóa và báo cho họ

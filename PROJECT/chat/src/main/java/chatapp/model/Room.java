@@ -18,7 +18,7 @@ public class Room implements Serializable { // Implement Serializable
     public Room(String name, String password, int leader_id) {
         this.name = name;
         this.password = password;
-        this.leaderId=leaderId;
+        this.leaderId= leader_id;
     }
 
     public int getId() {

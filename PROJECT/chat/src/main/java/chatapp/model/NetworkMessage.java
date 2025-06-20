@@ -56,6 +56,7 @@ public class NetworkMessage implements Serializable {
         USER_RESPONSE,
         JOIN_EXISTING_ROOM_RESPONSE,
         RECEIVE_FILES,// Server phản hồi yêu cầu tham gia phòng đã tham gia
-        FILE_TRANSFER_ERROR
+        FILE_TRANSFER_ERROR, CHANGE_PASSWORD_REQUEST, CHANGE_PASSWORD_FAILURE, CHANGE_PASSWORD_SUCCESS
+        /// them code sua thong tin
     }
 }

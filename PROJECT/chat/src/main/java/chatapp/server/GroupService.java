@@ -30,7 +30,7 @@ public class GroupService {
 
         connection.setAutoCommit(false);
         try (PreparedStatement stmtGroup = connection.prepareStatement(sqlGroup, Statement.RETURN_GENERATED_KEYS);
-                PreparedStatement stmtUserGroup = connection.prepareStatement(sqlUserGroup)) {
+             PreparedStatement stmtUserGroup = connection.prepareStatement(sqlUserGroup)) {
 
             stmtGroup.setString(1, name);
             stmtGroup.setString(2, password);

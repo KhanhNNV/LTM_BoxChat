@@ -85,4 +85,22 @@ public class UserService {
         }
         return null;
     }
+    /// them code sua thong tin
+    public boolean changePassword(int userId, String newPassword) throws SQLException {
+        String sql = "UPDATE users SET password = ? WHERE id = ?";
+        try (Connection conn = DBConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, newPassword);
+            stmt.setInt(2, userId);
+            int rowsUpdated = stmt.executeUpdate();
+
+            // Quan trọng: Commit thay đổi
+            if (!conn.getAutoCommit()) {
+                conn.commit();
+            }
+
+            return rowsUpdated > 0;
+        }
+    }
 }

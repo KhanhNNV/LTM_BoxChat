@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.sql.SQLException; // Tái sử dụng DBConfig
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import chatapp.model.*;
 
@@ -101,6 +102,10 @@ public class ClientHandler implements Runnable {
                     break;
                 case JOIN_EXISTING_ROOM_REQUEST:
                     handleJoinExistingRoom((Integer) message.getPayload());
+                    break;
+                case CHANGE_PASSWORD_REQUEST:
+                    Map<String, Object> payload = (Map<String, Object>) message.getPayload();
+                    handleChangePassword(payload);
                     break;
 
                 default:
@@ -309,60 +314,99 @@ public class ClientHandler implements Runnable {
         ));
     }
 
-private void handleJoinExistingRoom(int roomId) throws SQLException {
-    if (currentUser == null) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You must be logged in to join a room."
-        ));
-        return;
+    private void handleJoinExistingRoom(int roomId) throws SQLException {
+        if (currentUser == null) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You must be logged in to join a room."
+            ));
+            return;
+        }
+
+        // Kiểm tra xem user đã ở trong phòng này chưa
+        if (currentRoomId == roomId) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You are already in this room."
+            ));
+            return;
+        }
+
+        // Kiểm tra xem user có trong phòng không
+        if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You are not a member of this room."
+            ));
+            return;
+        }
+
+        // Rời phòng hiện tại nếu đang ở trong phòng
+        if (currentRoomId != -1) {
+            Server.removeUserFromRoom(currentRoomId, this);
+
+        }
+
+        // Tham gia phòng mới
+        Room room = groupService.getGroupById(roomId);
+        if (room != null) {
+            this.currentRoomId = roomId;
+            Server.addUserToRoom(roomId, this);
+
+            // Gửi phản hồi thành công với thông tin phòng
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
+                    room
+            ));
+
+
+        } else {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "Room not found."
+            ));
+        }
     }
+    /// code sua thong tin
+    private void handleChangePassword(Map<String, Object> payload) {
 
-    // Kiểm tra xem user đã ở trong phòng này chưa
-    if (currentRoomId == roomId) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You are already in this room."
-        ));
-        return;
+        try {
+            int userId = (int) payload.get("userId");
+            String newPassword = (String) payload.get("newPassword");
+
+            if (currentUser == null || currentUser.getId() != userId) {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
+                        "Không có quyền thay đổi mật khẩu"
+                ));
+                return;
+            }
+
+            boolean success = userService.changePassword(userId, newPassword);
+            if (success) {
+                currentUser.setPassword(newPassword);
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.CHANGE_PASSWORD_SUCCESS,
+                        "Đổi mật khẩu thành công"
+                ));
+            } else {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
+                        "Đổi mật khẩu thất bại"
+                ));
+            }
+        } catch (SQLException e) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
+            ));
+        } catch (Exception e) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
+                    "Lỗi hệ thống: " + e.getMessage()
+            ));
+        }
     }
-
-    // Kiểm tra xem user có trong phòng không
-    if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You are not a member of this room."
-        ));
-        return;
-    }
-
-    // Rời phòng hiện tại nếu đang ở trong phòng
-    if (currentRoomId != -1) {
-        Server.removeUserFromRoom(currentRoomId, this);
-
-    }
-
-    // Tham gia phòng mới
-    Room room = groupService.getGroupById(roomId);
-    if (room != null) {
-        this.currentRoomId = roomId;
-        Server.addUserToRoom(roomId, this);
-
-        // Gửi phản hồi thành công với thông tin phòng
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-                room
-        ));
-
-
-    } else {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "Room not found."
-        ));
-    }
-}
-
 
 
 }

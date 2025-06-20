@@ -3,13 +3,18 @@ package chatapp.controller;
 
 import chatapp.Main;
 import chatapp.model.*;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Side;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -28,12 +33,12 @@ import java.io.File;
 import java.nio.file.Files;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.io.ByteArrayInputStream;
 import javafx.event.Event;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.util.Duration;
 
 public class PrivateRoomController extends BaseController {
     @FXML
@@ -114,6 +119,9 @@ public class PrivateRoomController extends BaseController {
     private User currentUser;
     private boolean roomListenersInitialized = false;
 
+    @FXML private TextField searchField;
+    private List<Message> allMessages = new ArrayList<>();
+    private int currentSearchIndex = -1;
 
     // Khởi tạo
     @FXML
@@ -128,8 +136,129 @@ public class PrivateRoomController extends BaseController {
         emojiOverlay.setOnMouseClicked(e -> {
             hideEmojiPane(null);
         });
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                resetSearchHighlight();
+            }
+        });
 
     }
+    // xu ly tiem kiem
+    @FXML
+    private void handleSearch(ActionEvent event) {
+        String keyword = searchField.getText().trim();
+        if (keyword.isEmpty()) {
+            showAlert("Thông báo", "Vui lòng nhập từ khóa tìm kiếm");
+            return;
+        }
+
+        searchMessages(keyword);
+
+    }
+
+    private void searchMessages(String keyword) {
+        resetSearchHighlight();
+
+        List<HBox> foundMessages = new ArrayList<>();
+        List<Message> matchedMessages = new ArrayList<>();
+        String lowerKeyword = keyword.toLowerCase();
+
+        // Tìm kiếm trong tất cả tin nhắn
+        for (int i = 0; i < chatBox.getChildren().size(); i++) {
+            Node node = chatBox.getChildren().get(i);
+            if (node instanceof HBox) {
+                HBox messageContainer = (HBox) node;
+                Message message = allMessages.get(i);
+
+                // Kiểm tra nội dung tin nhắn
+                String content = "";
+                if (message.isFile()) {
+                    content = message.getFileName().toLowerCase();
+                } else {
+                    content = message.getContent().toLowerCase();
+                }
+
+                if (content.contains(lowerKeyword)) {
+                    messageContainer.setStyle("-fx-background-color: #fff9c4;");
+                    foundMessages.add(messageContainer);
+                    matchedMessages.add(message);
+                }
+            }
+        }
+
+        if (foundMessages.isEmpty()) {
+            showAlert("Thông báo", "Không tìm thấy tin nhắn nào chứa từ khóa: " + keyword);
+            return;
+        }
+
+        // Di chuyển đến kết quả đầu tiên
+        currentSearchIndex = 0;
+        scrollToMessage(foundMessages.get(0));
+
+        // Tạo menu kết quả tìm kiếm
+        createSearchResultsMenu(matchedMessages);
+    }
+
+    private void scrollToMessage(HBox messageBox) {
+        // Tính toán vị trí để cuộn đến
+        Bounds boundsInScene = messageBox.localToScene(messageBox.getBoundsInLocal());
+        double targetY = boundsInScene.getMinY();
+
+        // Tính toán vị trí scroll
+        double scrollHeight = scrollPane.getContent().getBoundsInLocal().getHeight();
+        double viewportHeight = scrollPane.getViewportBounds().getHeight();
+        double scrollValue = (targetY - 100) / (scrollHeight - viewportHeight);
+
+        // Giới hạn giá trị scroll trong khoảng 0-1
+        scrollValue = Math.max(0, Math.min(1, scrollValue));
+
+        // Cuộn đến vị trí
+        scrollPane.setVvalue(scrollValue);
+    }
+
+    private void resetSearchHighlight() {
+        for (Node node : chatBox.getChildren()) {
+            if (node instanceof HBox) {
+                node.setStyle("");
+            }
+        }
+        currentSearchIndex = -1;
+    }
+
+    private void createSearchResultsMenu(List<Message> matchedMessages) {
+        // Tạo popup menu hiển thị kết quả
+        ContextMenu searchResultsMenu = new ContextMenu();
+
+        for (Message message : matchedMessages) {
+            String displayText = message.getFullname() + ": ";
+            if (message.isFile()) {
+                displayText += "[File] " + message.getFileName();
+            } else {
+                // Giới hạn độ dài hiển thị
+                String content = message.getContent();
+                if (content.length() > 50) {
+                    content = content.substring(0, 47) + "...";
+                }
+                displayText += content;
+            }
+
+            MenuItem item = new MenuItem(displayText);
+            item.setOnAction(e -> {
+                int index = allMessages.indexOf(message);
+                if (index >= 0) {
+                    HBox messageBox = (HBox) chatBox.getChildren().get(index);
+                    scrollToMessage(messageBox);
+                    messageBox.setStyle("-fx-background-color: #ffeb3b;");
+                }
+            });
+
+            searchResultsMenu.getItems().add(item);
+        }
+
+        // Hiển thị menu ngay dưới ô tìm kiếm
+        searchResultsMenu.show(searchField, Side.BOTTOM, 0, 0);
+    }
+    //xulytim kiem
     // Được gọi từ controller trước đó để truyền thông tin phòng
 
     // Thêm phương thức khởi tạo emoji
@@ -324,6 +453,15 @@ public class PrivateRoomController extends BaseController {
                 }
                 break;
             // Xử lý các loại message khác...
+            case CHANGE_PASSWORD_SUCCESS:
+                // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
+                showAlert("Thành công", (String) message.getPayload());
+                break;
+
+            case CHANGE_PASSWORD_FAILURE:
+                // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
+                showAlert("Lỗi", (String) message.getPayload());
+                break;
         }
     }
 
@@ -499,13 +637,39 @@ public class PrivateRoomController extends BaseController {
         Client.getInstance().sendMessage(request);
     }
 
+    // Cập nhật khi tải lịch sử
+//    private void showRoomHistory(List<Message> messages) {
+//        chatBox.getChildren().clear();
+//        allMessages.clear();
+//
+//        for (Message msg : messages) {
+//            addMessageToUI(msg);
+//        }
+//    }
+    private void showRoomHistory(List<Message> history) {
+        Platform.runLater(() -> {
+            // Xóa tin nhắn cũ
+            chatBox.getChildren().clear();
+            allMessages.clear();
 
-    private void showRoomHistory(List<Message> messages) {
-        chatBox.getChildren().clear();
-        for (Message msg : messages) {
-            addMessageToUI(msg);
-        }
+            // Thêm tất cả tin nhắn lịch sử
+            for (Message msg : history) {
+                HBox messageContainer;
+                if (msg.isFile()) {
+                    messageContainer = createFileMessageContainer(msg);
+                } else {
+                    messageContainer = createTextMessageContainer(msg);
+                }
+                chatBox.getChildren().add(messageContainer);
+                allMessages.add(msg); // Lưu vào danh sách tìm kiếm
+            }
+
+            // Cuộn xuống dưới cùng
+            scrollToBottom();
+        });
     }
+
+    //code mơi
 
 
 
@@ -561,16 +725,145 @@ public class PrivateRoomController extends BaseController {
         });
     }
 
+    //    private void addMessageToUI(Message msg) {
+//        Platform.runLater(() -> {
+//            if (msg.isFile()) {
+//                addFileMessageToUI(msg);
+//            } else {
+//                addTextMessageToUI(msg);
+//            }
+//            scrollToBottom();
+//
+//        });
+//    }
     private void addMessageToUI(Message msg) {
         Platform.runLater(() -> {
+            // 1. Tạo container cho tin nhắn dựa trên loại tin nhắn
+            HBox messageContainer;
             if (msg.isFile()) {
-                addFileMessageToUI(msg);
+                messageContainer = createFileMessageContainer(msg);
             } else {
-                addTextMessageToUI(msg);
+                messageContainer = createTextMessageContainer(msg);
             }
+
+            // 2. Thêm container vào giao diện chat
+            chatBox.getChildren().add(messageContainer);
+
+            // 3. Lưu tin nhắn vào danh sách tất cả tin nhắn
+            allMessages.add(msg);
+
+            // 4. Cuộn xuống tin nhắn mới nhất
             scrollToBottom();
+
+            // 5. Áp dụng hiệu ứng cho tin nhắn mới (tuỳ chọn)
+            applyNewMessageEffect(messageContainer);
         });
     }
+
+    private HBox createTextMessageContainer(Message msg) {
+        HBox messageContainer = new HBox(10);
+        messageContainer.setAlignment(Pos.TOP_LEFT);
+        messageContainer.setPadding(new Insets(5));
+        messageContainer.setMaxWidth(580);
+
+        // Tạo avatar
+        ImageView avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
+        avatar.setFitWidth(42);
+        avatar.setFitHeight(44);
+        avatar.setPreserveRatio(true);
+
+        // Tạo phần nội dung
+        VBox contentBox = new VBox(3);
+
+        // Dòng thông tin người gửi và thời gian
+        HBox infoBox = new HBox(10);
+        Label nameLabel = new Label(msg.getFullname());
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+        String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy"));
+        Label timeLabel = new Label(formattedTime);
+        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+
+        infoBox.getChildren().addAll(nameLabel, timeLabel);
+
+        // Nội dung tin nhắn
+        Text messageText = new Text(msg.getContent());
+        messageText.setWrappingWidth(480);
+
+        TextFlow messageFlow = new TextFlow(messageText);
+        messageFlow.setMaxWidth(480);
+        messageFlow.setPadding(new Insets(5));
+        messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+
+        contentBox.getChildren().addAll(infoBox, messageFlow);
+        messageContainer.getChildren().addAll(avatar, contentBox);
+
+        return messageContainer;
+    }
+
+    private HBox createFileMessageContainer(Message msg) {
+        HBox messageContainer = new HBox(10);
+        messageContainer.setAlignment(Pos.TOP_LEFT);
+        messageContainer.setPadding(new Insets(5));
+        messageContainer.setMaxWidth(580);
+
+        // Tạo avatar
+        ImageView avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
+        avatar.setFitWidth(42);
+        avatar.setFitHeight(44);
+        avatar.setPreserveRatio(true);
+
+        // Tạo phần nội dung
+        VBox contentBox = new VBox(3);
+
+        // Dòng thông tin người gửi và thời gian
+        HBox infoBox = new HBox(10);
+        Label nameLabel = new Label(msg.getFullname());
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+
+        String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy"));
+        Label timeLabel = new Label(formattedTime);
+        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+
+        infoBox.getChildren().addAll(nameLabel, timeLabel);
+
+        // Tạo nút tải file
+        Button downloadButton = new Button(msg.getFileName());
+        downloadButton.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        downloadButton.setOnAction(e -> handleDownloadFile(msg));
+
+        // Thêm hình ảnh xem trước nếu là ảnh
+        if (msg.getFileType() != null && msg.getFileType().startsWith("image/")) {
+            try {
+                Image image = new Image(new ByteArrayInputStream(msg.getFileData()));
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(200);
+                imageView.setPreserveRatio(true);
+
+                VBox fileBox = new VBox(5, downloadButton, imageView);
+                contentBox.getChildren().addAll(infoBox, fileBox);
+            } catch (Exception e) {
+                contentBox.getChildren().addAll(infoBox, downloadButton);
+            }
+        } else {
+            contentBox.getChildren().addAll(infoBox, downloadButton);
+        }
+
+        messageContainer.getChildren().addAll(avatar, contentBox);
+        return messageContainer;
+    }
+
+    private void applyNewMessageEffect(HBox messageContainer) {
+        // Hiệu ứng cho tin nhắn mới
+        messageContainer.setOpacity(0);
+        Timeline fadeIn = new Timeline(
+                new KeyFrame(Duration.seconds(0.3),
+                        new KeyValue(messageContainer.opacityProperty(), 1)
+                ));
+        fadeIn.play();
+    }
+
+    /// /code moi
 
     private void addTextMessageToUI(Message msg) {
         HBox messageContainer = new HBox(10);
@@ -739,7 +1032,7 @@ public class PrivateRoomController extends BaseController {
             Platform.runLater(() -> {
                 infoFullNameUser.setText(currentUser.getFullName());
                 infoUserNameUser.setText(currentUser.getUsername());
-                infoPassUser.setText(currentUser.getPassword()); // Note: Consider security implications
+//                infoPassUser.setText(currentUser.getPassword()); // Note: Consider security implications
                 infoGmailUser.setText(currentUser.getGmail());
             });
         }
@@ -864,6 +1157,88 @@ public class PrivateRoomController extends BaseController {
         alert.setContentText(message);
         alert.showAndWait();
     }
+    /// / them codde sua mk
+    @FXML
+    private void handleChangePassword(ActionEvent event) {
+        System.out.println("Change password button clicked!");
 
+        // Tạo dialog
+        Dialog<Map<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Đổi mật khẩu");
+        dialog.setHeaderText("Nhập thông tin mật khẩu mới");
+
+        ButtonType changeButtonType = new ButtonType("Đổi", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(changeButtonType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        PasswordField newPasswordField = new PasswordField();
+        newPasswordField.setPromptText("Mật khẩu mới");
+        PasswordField confirmPasswordField = new PasswordField();
+        confirmPasswordField.setPromptText("Xác nhận mật khẩu");
+
+        grid.add(new Label("Mật khẩu mới:"), 0, 0);
+        grid.add(newPasswordField, 1, 0);
+        grid.add(new Label("Xác nhận mật khẩu:"), 0, 1);
+        grid.add(confirmPasswordField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        Platform.runLater(newPasswordField::requestFocus);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == changeButtonType) {
+                return Map.of(
+                        "newPassword", newPasswordField.getText(),
+                        "confirmPassword", confirmPasswordField.getText()
+                );
+            }
+            return null;
+        });
+
+        Optional<Map<String, String>> result = dialog.showAndWait();
+        result.ifPresent(passwordData -> {
+            System.out.println("Dialog result received!");
+
+            String newPassword = passwordData.get("newPassword");
+            String confirmPassword = passwordData.get("confirmPassword");
+
+            if (newPassword == null || newPassword.isEmpty()) {
+                showAlert("Lỗi", "Mật khẩu không được để trống!");
+                return;
+            }
+
+            if (!newPassword.equals(confirmPassword)) {
+                showAlert("Lỗi", "Mật khẩu xác nhận không khớp!");
+                return;
+            }
+
+            if (newPassword.length() < 6) {
+                showAlert("Lỗi", "Mật khẩu phải có ít nhất 6 ký tự!");
+                return;
+            }
+
+            if (currentUser == null) {
+                showAlert("Lỗi", "Không tìm thấy thông tin người dùng!");
+                return;
+            }
+
+            System.out.println("Sending change password request for user: " + currentUser.getId());
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("userId", currentUser.getId());
+            payload.put("newPassword", newPassword);
+
+            NetworkMessage message = new NetworkMessage(
+                    NetworkMessage.MessageType.CHANGE_PASSWORD_REQUEST,
+                    payload
+            );
+
+            Client.getInstance().sendMessage(message);
+            System.out.println("Change password request sent!");
+        });
+    }
 }
 

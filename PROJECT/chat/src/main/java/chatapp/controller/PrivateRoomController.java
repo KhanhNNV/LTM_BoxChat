@@ -144,16 +144,6 @@ public class PrivateRoomController extends BaseController {
         requestCurrentUser();
         overlay.setOnMouseClicked(e -> hideMenu(null));
 
-        // Gắn sự kiện đóng cho overlay
-        overlay.setOnMouseClicked(event -> {
-            System.out.println("[DEBUG] Click vào overlay. Đóng boxInfo.");
-            hideBoxInfo(event);
-        });
-        overlay2.setOnMouseClicked(event -> {
-            System.out.println("[DEBUG] Click vào overlay2. Đóng boxInfo.");
-            hideBoxInfo(event);
-        });
-
         // === BẮT ĐẦU CODE MỚI CHO TÍNH NĂNG GỬI BẰNG ENTER ===
         inputTextArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {

@@ -107,6 +107,18 @@ public class ClientHandler implements Runnable {
                     Map<String, Object> payload = (Map<String, Object>) message.getPayload();
                     handleChangePassword(payload);
                     break;
+                case UPDATE_FULLNAME_REQUEST:
+                    handleUpdateFullName((Map<String, Object>) message.getPayload());
+                    break;
+                case UPDATE_GMAIL_REQUEST:
+                    handleUpdateGmail((Map<String, Object>) message.getPayload());
+                    break;
+                case UPDATE_ROOM_NAME_REQUEST:
+                    handleUpdateRoomName((Map<String, Object>) message.getPayload());
+                    break;
+                case UPDATE_ROOM_PASSWORD_REQUEST:
+                    handleUpdateRoomPassword((Map<String, Object>) message.getPayload());
+                    break;
 
                 default:
                     // System.out.println("Received unknown message type: " + message.getType());
@@ -407,6 +419,135 @@ private void handleJoinExistingRoom(int roomId) throws SQLException {
             ));
         }
     }
+    private void handleUpdateFullName(Map<String, Object> payload) {
+        try {
+            int userId = (int) payload.get("userId");
+            String newFullName = (String) payload.get("newFullName");
+
+            if (currentUser == null || currentUser.getId() != userId) {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
+                        "Không có quyền thay đổi tên hiển thị"
+                ));
+                return;
+            }
+
+            boolean success = userService.updateFullName(userId, newFullName);
+            if (success) {
+                currentUser.setFullName(newFullName);
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_FULLNAME_SUCCESS,
+                        "Đổi tên hiển thị thành công"
+                ));
+            } else {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
+                        "Đổi tên hiển thị thất bại"
+                ));
+            }
+        } catch (SQLException e) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
+            ));
+        }
 
 
+    }
+    // sua Gmail
+    private void handleUpdateGmail(Map<String, Object> payload) {
+        try {
+            int userId = (int) payload.get("userId");
+            String newGmail = (String) payload.get("newGmail");
+
+            if (currentUser == null || currentUser.getId() != userId) {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
+                        "Không có quyền thay đổi Gmail"
+                ));
+                return;
+            }
+
+            boolean success = userService.updateGmail(userId, newGmail);
+            if (success) {
+                currentUser.setGmail(newGmail);
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_GMAIL_SUCCESS,
+                        "Đổi Gmail thành công"
+                ));
+            } else {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
+                        "Đổi Gmail thất bại (có thể Gmail đã tồn tại)"
+                ));
+            }
+        } catch (SQLException e) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
+            ));
+        }
+    }
+    // sua ten phong
+    private void handleUpdateRoomName(Map<String, Object> payload) {
+        try {
+            int roomId = (int) payload.get("roomId");
+            String newName = (String) payload.get("newName");
+            int leaderId = (int) payload.get("leaderId");
+
+            if (groupService.updateRoomName(roomId, newName, leaderId)) {
+                Room updatedRoom = groupService.getGroupById(roomId); // Lấy thông tin phòng đã cập nhật
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
+                        updatedRoom
+                ));
+
+                // Broadcast cho tất cả thành viên trong phòng
+                Server.broadcastMessage(roomId,
+                        new NetworkMessage(
+                                NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
+                                updatedRoom
+                        ),
+                        this
+                );
+            }
+        } catch (SQLException e) {
+            // Xử lý lỗi...
+        }
+    }
+    // sua pass phong
+    private void handleUpdateRoomPassword(Map<String, Object> payload) {
+        try {
+            int roomId = (int) payload.get("roomId");
+            String newPassword = (String) payload.get("newPassword");
+            int leaderId = (int) payload.get("leaderId");
+
+            boolean success = groupService.updateRoomPassword(roomId, newPassword, leaderId);
+            if (success) {
+                // Trả về Room đã cập nhật để client cập nhật UI
+                Room updatedRoom = groupService.getGroupById(roomId);
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
+                        updatedRoom
+                ));
+
+                // Thông báo cho các thành viên khác (nếu cần)
+                NetworkMessage broadcastMsg = new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
+                        updatedRoom
+                );
+                Server.broadcastMessage(roomId, broadcastMsg, this);
+            } else {
+                sendMessage(new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
+                        "Cập nhật mật khẩu thất bại"
+                ));
+            }
+        } catch (SQLException e) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
+                    "Lỗi database: " + e.getMessage()
+            ));
+        }
+    }
 }

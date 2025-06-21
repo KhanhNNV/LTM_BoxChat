@@ -40,6 +40,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.util.Duration;
 
+
 public class PrivateRoomController extends BaseController {
     @FXML
     private ListView<String> statusListView;
@@ -461,6 +462,61 @@ public class PrivateRoomController extends BaseController {
             case CHANGE_PASSWORD_FAILURE:
                 // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
                 showAlert("Lỗi", (String) message.getPayload());
+                break;
+            case UPDATE_FULLNAME_SUCCESS:
+                showAlert("Thành công", (String) message.getPayload());
+                requestCurrentUser(); // Lấy lại thông tin user mới
+                break;
+            case UPDATE_FULLNAME_FAILURE:
+                showAlert("Lỗi", (String) message.getPayload());
+                break;
+            case UPDATE_GMAIL_SUCCESS:
+                showAlert("Thành công", (String) message.getPayload());
+                requestCurrentUser(); // Lấy lại thông tin user mới
+                break;
+            case UPDATE_GMAIL_FAILURE:
+                showAlert("Lỗi", (String) message.getPayload());
+                break;
+            case UPDATE_ROOM_NAME_SUCCESS:
+                if (message.getPayload() instanceof Room) {
+                    Room updatedRoom = (Room) message.getPayload();
+
+                    // 1. Cập nhật thông tin phòng hiện tại
+                    currentRoom.setName(updatedRoom.getName());
+
+                    // 2. Cập nhật UI ngay lập tức
+                    groupNameLabel.setText(updatedRoom.getName());  // Header
+                    infoNameGroup.setText(updatedRoom.getName());  // Popup menu
+
+                    // 3. CẬP NHẬT DANH SÁCH NHÓM BÊN TRÁI
+                    refreshRoomList(updatedRoom);
+
+                    showAlert("Thành công", "Đã đổi tên phòng thành công!");
+                }
+                break;
+
+            case UPDATE_ROOM_NAME_FAILURE:
+                showAlert("Lỗi", message.getPayload() != null
+                        ? message.getPayload().toString()
+                        : "Không thể đổi tên phòng");
+                break;
+
+            case UPDATE_ROOM_PASSWORD_SUCCESS:
+                // Cập nhật mật khẩu mới trong currentRoom
+                if (message.getPayload() instanceof Room) {
+                    Room updatedRoom = (Room) message.getPayload();
+                    currentRoom.setPassword(updatedRoom.getPassword());
+                    infoPassGroup.setText(updatedRoom.getPassword()); // Cập nhật UI
+                    showAlert("Thành công", "Đã cập nhật mật khẩu phòng thành công!");
+                } else {
+                    showAlert("Thông báo", "Mật khẩu phòng đã được cập nhật");
+                }
+                break;
+
+            case UPDATE_ROOM_PASSWORD_FAILURE:
+                showAlert("Lỗi", message.getPayload() != null
+                        ? message.getPayload().toString()
+                        : "Không thể cập nhật mật khẩu phòng");
                 break;
         }
     }
@@ -1070,13 +1126,18 @@ public class PrivateRoomController extends BaseController {
     }
 
     @FXML
-    private void showSearchBox(MouseEvent event){
-        if(searchPopup.isVisible()){
-            searchPopup.setVisible(false);
+    private void showSearchBox(MouseEvent event) {
+        // Đảo trạng thái hiển thị của searchPopup
+        searchPopup.setVisible(!searchPopup.isVisible());
+
+        // Nếu đang hiển thị thì focus vào ô tìm kiếm
+        if (searchPopup.isVisible()) {
+            Platform.runLater(() -> {
+                searchField.requestFocus();
+            });
         }
-        else{
-            searchPopup.setVisible(true);
-        }
+
+        event.consume();
     }
 
     @FXML
@@ -1242,5 +1303,154 @@ public class PrivateRoomController extends BaseController {
             System.out.println("Change password request sent!");
         });
     }
+    // PrivateRoomController.java
+    // Thay đổi từ ActionEvent sang MouseEvent( sua ten hien thi)
+    @FXML
+    private void handleUpdateFullName(MouseEvent event) {
+        TextInputDialog dialog = new TextInputDialog(currentUser.getFullName());
+        dialog.setTitle("Đổi tên hiển thị");
+        dialog.setHeaderText("Nhập tên hiển thị mới");
+        dialog.setContentText("Tên hiển thị:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newFullName -> {
+            if (!newFullName.trim().isEmpty()) {
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("userId", currentUser.getId());
+                payload.put("newFullName", newFullName.trim());
+
+                NetworkMessage message = new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_FULLNAME_REQUEST,
+                        payload
+                );
+                Client.getInstance().sendMessage(message);
+            }
+        });
+
+        event.consume(); // Ngăn sự kiện tiếp tục lan truyền
+    }
+    // Sua Gmail
+    @FXML
+    private void handleUpdateGmail(MouseEvent event) {
+        TextInputDialog dialog = new TextInputDialog(currentUser.getGmail());
+        dialog.setTitle("Đổi Gmail");
+        dialog.setHeaderText("Nhập Gmail mới");
+        dialog.setContentText("Gmail:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newGmail -> {
+            if (!newGmail.trim().isEmpty()) {
+                // Kiểm tra định dạng email
+                if (!newGmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+                    showAlert("Lỗi", "Định dạng Gmail không hợp lệ");
+                    return;
+                }
+
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("userId", currentUser.getId());
+                payload.put("newGmail", newGmail.trim());
+
+                NetworkMessage message = new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_GMAIL_REQUEST,
+                        payload
+                );
+                Client.getInstance().sendMessage(message);
+            }
+        });
+
+        event.consume();
+    }
+    // sua ten phong
+    // PrivateRoomController.java
+    @FXML
+    private void handleUpdateRoomName(MouseEvent event) {
+        if (currentRoom == null || currentUser == null || currentUser.getId() != currentRoom.getLeaderId()) {
+            showAlert("Lỗi", "Chỉ chủ phòng mới có quyền sửa tên phòng");
+            return;
+        }
+
+        TextInputDialog dialog = new TextInputDialog(currentRoom.getName());
+        dialog.setTitle("Đổi tên phòng");
+        dialog.setHeaderText("Nhập tên phòng mới");
+        dialog.setContentText("Tên phòng:");
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newName -> {
+            if (!newName.trim().isEmpty()) {
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("roomId", currentRoom.getId());
+                payload.put("newName", newName.trim());
+                payload.put("leaderId", currentUser.getId());
+
+                NetworkMessage message = new NetworkMessage(
+                        NetworkMessage.MessageType.UPDATE_ROOM_NAME_REQUEST,
+                        payload
+                );
+                Client.getInstance().sendMessage(message);
+            }
+        });
+
+        event.consume();
+    }
+    // sua pass phong
+    // PrivateRoomController.java
+    @FXML
+    private void handleUpdateRoomPassword(MouseEvent event) {
+        if (currentRoom == null || currentUser == null || currentUser.getId() != currentRoom.getLeaderId()) {
+            showAlert("Lỗi", "Chỉ chủ phòng mới có quyền đổi mật khẩu phòng");
+            return;
+        }
+
+        // Tạo dialog nhập mật khẩu
+        Dialog<String> dialog = new Dialog<>();
+        dialog.setTitle("Đổi mật khẩu phòng");
+        dialog.setHeaderText("Nhập mật khẩu mới (tối thiểu 4 ký tự)");
+
+        PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Nhập mật khẩu mới...");
+
+        dialog.getDialogPane().setContent(passwordField);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(buttonType -> {
+            return buttonType == ButtonType.OK ? passwordField.getText() : null;
+        });
+
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(newPassword -> {
+            if (newPassword.trim().length() < 4) {
+                showAlert("Lỗi", "Mật khẩu phải có ít nhất 4 ký tự");
+                return;
+            }
+
+            // Gửi yêu cầu cập nhật mật khẩu phòng
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("roomId", currentRoom.getId());
+            payload.put("newPassword", newPassword.trim());
+            payload.put("leaderId", currentUser.getId());
+
+            NetworkMessage message = new NetworkMessage(
+                    NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_REQUEST,
+                    payload
+            );
+            Client.getInstance().sendMessage(message);
+        });
+
+        event.consume();
+    }
+    // load laij danh sach nhom
+    private void refreshRoomList(Room updatedRoom) {
+        // Cập nhật tên phòng trong allGroups
+        for (Room room : allGroups) {
+            if (room.getId() == updatedRoom.getId()) {
+                room.setName(updatedRoom.getName());
+                break;
+            }
+        }
+
+        // Load lại danh sách nhóm
+        showListGroups(allGroups);
+    }
+
 }
 

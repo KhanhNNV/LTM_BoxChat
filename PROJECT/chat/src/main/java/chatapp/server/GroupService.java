@@ -336,5 +336,43 @@ public class GroupService {
         return members;
     }
 
+    // GroupService.java
+    public boolean updateRoomName(int roomId, String newName, int leaderId) throws SQLException {
+        String checkLeaderSql = "SELECT leader_id FROM `Groups` WHERE id = ?";
+        try (PreparedStatement checkStmt = connection.prepareStatement(checkLeaderSql)) {
+            checkStmt.setInt(1, roomId);
+            ResultSet rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt("leader_id") != leaderId) {
+                return false; // Không phải leader
+            }
+        }
+
+        String updateSql = "UPDATE `Groups` SET name = ? WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(updateSql)) {
+            stmt.setString(1, newName);
+            stmt.setInt(2, roomId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+    // sua pass phong
+    public boolean updateRoomPassword(int roomId, String newPassword, int leaderId) throws SQLException {
+        // Kiểm tra quyền chủ phòng
+        String checkLeaderSql = "SELECT leader_id FROM `Groups` WHERE id = ?";
+        try (PreparedStatement checkStmt = connection.prepareStatement(checkLeaderSql)) {
+            checkStmt.setInt(1, roomId);
+            ResultSet rs = checkStmt.executeQuery();
+            if (rs.next() && rs.getInt("leader_id") != leaderId) {
+                return false;
+            }
+        }
+
+        // Cập nhật mật khẩu mới
+        String updateSql = "UPDATE `Groups` SET password = ? WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(updateSql)) {
+            stmt.setString(1, newPassword);
+            stmt.setInt(2, roomId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
 
 }

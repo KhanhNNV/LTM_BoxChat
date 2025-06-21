@@ -161,36 +161,73 @@
 .edit-button:hover {
     -fx-background-color: #45a049;
 }
+
 /* Highlight cho kết quả tìm kiếm */
 .highlighted-message {
-    -fx-background-color: #fff9c4;
-    -fx-border-color: #ffc107;
+    -fx-background-color: #fff9c4; /* Màu nền vàng nhạt */
+    -fx-border-color: #ffc107;     /* Viền màu vàng đậm */
     -fx-border-width: 1px;
     -fx-border-radius: 5px;
     -fx-padding: 3px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
 }
 
-/* Menu kết quả tìm kiếm */
+/* Hiệu ứng khi hover vào kết quả tìm kiếm */
+.highlighted-message:hover {
+    -fx-background-color: #ffeb3b; /* Màu vàng sáng hơn khi hover */
+    -fx-border-color: #ffa000;     /* Viền đậm hơn */
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 3);
+}
+
+/* Menu kết quả tìm kiếm - ĐÃ SỬA LẠI */
 .search-result-item {
-    -fx-padding: 5px 10px;
-    -fx-font-size: 12px;
+    -fx-padding: 8px 12px;
+    -fx-font-size: 13px;
+    -fx-background-color: #f8f8f8; /* Màu nền xám nhạt thay vì xanh */
+    -fx-text-fill: #333;          /* Màu chữ tối */
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1px 0;
 }
 
 .search-result-item:hover {
-    -fx-background-color: #e3f2fd;
-    -fx-cursor: hand;
-}
-
-/* Navigation buttons */
-.search-nav-button {
-    -fx-background-color: #4CAF50;
-    -fx-text-fill: white;
+    -fx-background-color: #4CAF50; /* Màu xanh lá khi hover */
+    -fx-text-fill: white;         /* Chữ trắng khi hover */
     -fx-font-weight: bold;
-    -fx-padding: 5px 10px;
-    -fx-border-radius: 3px;
     -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
 }
 
-.search-nav-button:hover {
-    -fx-background-color: #45a049;
+/* Hiệu ứng chuyển động mượt mà */
+.search-result-item, .highlighted-message {
+    -fx-transition: all 0.2s ease;
+}
+
+/* Ô tìm kiếm - ĐÃ SỬA LẠI */
+.search-popup {
+    -fx-background-color: white; /* Đổi từ xanh sang trắng */
+    -fx-border-color: #4CAF50;   /* Viền xanh lá */
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 1);
+    -fx-padding: 5px;
+}
+
+.search-popup .text-field {
+    -fx-background-color: white;
+    -fx-border-color: green;
+    -fx-prompt-text-fill: red;
+    -fx-font-size: 14px;
+}
+
+/* Nút tìm kiếm trong popup */
+.search-popup .button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.search-popup .button:hover {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 15px;
 }

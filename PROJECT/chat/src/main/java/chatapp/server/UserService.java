@@ -120,4 +120,39 @@ public class UserService {
             return rowsUpdated > 0;
         }
     }
+    // UserService.java
+    public boolean updateFullName(int userId, String newFullName) throws SQLException {
+        String sql = "UPDATE users SET fullname = ? WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, newFullName);
+            stmt.setInt(2, userId);
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (!connection.getAutoCommit()) {
+                connection.commit();
+            }
+
+            return rowsUpdated > 0;
+        }
+    }
+    // UserService.java
+    public boolean updateGmail(int userId, String newGmail) throws SQLException {
+        // Kiểm tra Gmail đã tồn tại chưa
+        if (gmailExists(newGmail)) {
+            return false;
+        }
+
+        String sql = "UPDATE users SET gmail = ? WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, newGmail);
+            stmt.setInt(2, userId);
+            int rowsUpdated = stmt.executeUpdate();
+
+            if (!connection.getAutoCommit()) {
+                connection.commit();
+            }
+
+            return rowsUpdated > 0;
+        }
+    }
 }

@@ -495,26 +495,24 @@ public class ClientHandler implements Runnable {
             String newName = (String) payload.get("newName");
             int leaderId = (int) payload.get("leaderId");
 
-            boolean success = groupService.updateRoomName(roomId, newName, leaderId);
-            if (success) {
-                // Gửi thông báo cập nhật đến tất cả thành viên
-                Room updatedRoom = groupService.getGroupById(roomId);
-                NetworkMessage updateMsg = new NetworkMessage(
+            if (groupService.updateRoomName(roomId, newName, leaderId)) {
+                Room updatedRoom = groupService.getGroupById(roomId); // Lấy thông tin phòng đã cập nhật
+                sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
                         updatedRoom
-                );
-                Server.broadcastMessage(roomId, updateMsg, null);
-            } else {
-                sendMessage(new NetworkMessage(
-                        NetworkMessage.MessageType.UPDATE_ROOM_NAME_FAILURE,
-                        "Không thể cập nhật tên phòng"
                 ));
+
+                // Broadcast cho tất cả thành viên trong phòng
+                Server.broadcastMessage(roomId,
+                        new NetworkMessage(
+                                NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
+                                updatedRoom
+                        ),
+                        this
+                );
             }
         } catch (SQLException e) {
-            sendMessage(new NetworkMessage(
-                    NetworkMessage.MessageType.UPDATE_ROOM_NAME_FAILURE,
-                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
-            ));
+            // Xử lý lỗi...
         }
     }
     // sua pass phong
@@ -526,29 +524,29 @@ public class ClientHandler implements Runnable {
 
             boolean success = groupService.updateRoomPassword(roomId, newPassword, leaderId);
             if (success) {
-                // Gửi thông báo thành công
+                // Trả về Room đã cập nhật để client cập nhật UI
+                Room updatedRoom = groupService.getGroupById(roomId);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
-                        "Đã cập nhật mật khẩu phòng thành công"
+                        updatedRoom
                 ));
 
-                // Thông báo cho các thành viên khác
-                Room updatedRoom = groupService.getGroupById(roomId);
-                NetworkMessage updateMsg = new NetworkMessage(
+                // Thông báo cho các thành viên khác (nếu cần)
+                NetworkMessage broadcastMsg = new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
                         updatedRoom
                 );
-                Server.broadcastMessage(roomId, updateMsg, this);
+                Server.broadcastMessage(roomId, broadcastMsg, this);
             } else {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
-                        "Không thể cập nhật mật khẩu phòng"
+                        "Cập nhật mật khẩu thất bại"
                 ));
             }
         } catch (SQLException e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
-                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
+                    "Lỗi database: " + e.getMessage()
             ));
         }
     }

@@ -318,13 +318,12 @@ public class GroupService {
 
     // GroupService.java
     public boolean updateRoomName(int roomId, String newName, int leaderId) throws SQLException {
-        // Kiểm tra xem người yêu cầu có phải là chủ phòng không
         String checkLeaderSql = "SELECT leader_id FROM `Groups` WHERE id = ?";
         try (PreparedStatement checkStmt = connection.prepareStatement(checkLeaderSql)) {
             checkStmt.setInt(1, roomId);
             ResultSet rs = checkStmt.executeQuery();
             if (rs.next() && rs.getInt("leader_id") != leaderId) {
-                return false;
+                return false; // Không phải leader
             }
         }
 

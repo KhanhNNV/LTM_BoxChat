@@ -479,34 +479,44 @@ public class PrivateRoomController extends BaseController {
                 break;
             case UPDATE_ROOM_NAME_SUCCESS:
                 if (message.getPayload() instanceof Room) {
-                    Room nameUpdatedRoom = (Room) message.getPayload();
-                    this.currentRoom = nameUpdatedRoom;
-                    groupNameLabel.setText(nameUpdatedRoom.getName());
-                    showAlert("Thành công", "Đã cập nhật tên phòng thành: " + nameUpdatedRoom.getName());
-                } else {
-                    showAlert("Lỗi", "Dữ liệu phản hồi không hợp lệ");
+                    Room updatedRoom = (Room) message.getPayload();
+
+                    // 1. Cập nhật thông tin phòng hiện tại
+                    currentRoom.setName(updatedRoom.getName());
+
+                    // 2. Cập nhật UI ngay lập tức
+                    groupNameLabel.setText(updatedRoom.getName());  // Header
+                    infoNameGroup.setText(updatedRoom.getName());  // Popup menu
+
+                    // 3. CẬP NHẬT DANH SÁCH NHÓM BÊN TRÁI
+                    refreshRoomList(updatedRoom);
+
+                    showAlert("Thành công", "Đã đổi tên phòng thành công!");
                 }
                 break;
 
             case UPDATE_ROOM_NAME_FAILURE:
-                showAlert("Lỗi", message.getPayload() != null ? message.getPayload().toString() : "Lỗi không xác định");
+                showAlert("Lỗi", message.getPayload() != null
+                        ? message.getPayload().toString()
+                        : "Không thể đổi tên phòng");
                 break;
 
             case UPDATE_ROOM_PASSWORD_SUCCESS:
+                // Cập nhật mật khẩu mới trong currentRoom
                 if (message.getPayload() instanceof Room) {
-                    Room passUpdatedRoom = (Room) message.getPayload();
-                    this.currentRoom = passUpdatedRoom;
-                    infoPassGroup.setText(passUpdatedRoom.getPassword());
-                    showAlert("Thành công", "Đã cập nhật mật khẩu phòng");
-                } else if (message.getPayload() != null) {
-                    showAlert("Thông báo", message.getPayload().toString());
+                    Room updatedRoom = (Room) message.getPayload();
+                    currentRoom.setPassword(updatedRoom.getPassword());
+                    infoPassGroup.setText(updatedRoom.getPassword()); // Cập nhật UI
+                    showAlert("Thành công", "Đã cập nhật mật khẩu phòng thành công!");
                 } else {
-                    showAlert("Lỗi", "Dữ liệu phản hồi không hợp lệ");
+                    showAlert("Thông báo", "Mật khẩu phòng đã được cập nhật");
                 }
                 break;
 
             case UPDATE_ROOM_PASSWORD_FAILURE:
-                showAlert("Lỗi", message.getPayload() != null ? message.getPayload().toString() : "Lỗi không xác định");
+                showAlert("Lỗi", message.getPayload() != null
+                        ? message.getPayload().toString()
+                        : "Không thể cập nhật mật khẩu phòng");
                 break;
         }
     }
@@ -1384,7 +1394,6 @@ public class PrivateRoomController extends BaseController {
     // PrivateRoomController.java
     @FXML
     private void handleUpdateRoomPassword(MouseEvent event) {
-        // Kiểm tra quyền leader
         if (currentRoom == null || currentUser == null || currentUser.getId() != currentRoom.getLeaderId()) {
             showAlert("Lỗi", "Chỉ chủ phòng mới có quyền đổi mật khẩu phòng");
             return;
@@ -1395,18 +1404,16 @@ public class PrivateRoomController extends BaseController {
         dialog.setTitle("Đổi mật khẩu phòng");
         dialog.setHeaderText("Nhập mật khẩu mới (tối thiểu 4 ký tự)");
 
-        // Thiết lập PasswordField
         PasswordField passwordField = new PasswordField();
-        passwordField.setPromptText("Nhập mật khẩu...");
+        passwordField.setPromptText("Nhập mật khẩu mới...");
 
-        // Thêm vào dialog
         dialog.getDialogPane().setContent(passwordField);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        // Xử lý kết quả
-        dialog.setResultConverter(buttonType -> buttonType == ButtonType.OK ? passwordField.getText() : null);
+        dialog.setResultConverter(buttonType -> {
+            return buttonType == ButtonType.OK ? passwordField.getText() : null;
+        });
 
-        // Hiển thị và xử lý
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newPassword -> {
             if (newPassword.trim().length() < 4) {
@@ -1414,18 +1421,33 @@ public class PrivateRoomController extends BaseController {
                 return;
             }
 
-            // Gửi yêu cầu cập nhật
-            Client.getInstance().sendMessage(new NetworkMessage(
+            // Gửi yêu cầu cập nhật mật khẩu phòng
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("roomId", currentRoom.getId());
+            payload.put("newPassword", newPassword.trim());
+            payload.put("leaderId", currentUser.getId());
+
+            NetworkMessage message = new NetworkMessage(
                     NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_REQUEST,
-                    Map.of(
-                            "roomId", currentRoom.getId(),
-                            "newPassword", newPassword.trim(),
-                            "leaderId", currentUser.getId()
-                    )
-            ));
+                    payload
+            );
+            Client.getInstance().sendMessage(message);
         });
 
         event.consume();
+    }
+    // load laij danh sach nhom
+    private void refreshRoomList(Room updatedRoom) {
+        // Cập nhật tên phòng trong allGroups
+        for (Room room : allGroups) {
+            if (room.getId() == updatedRoom.getId()) {
+                room.setName(updatedRoom.getName());
+                break;
+            }
+        }
+
+        // Load lại danh sách nhóm
+        showListGroups(allGroups);
     }
 
 }

@@ -14,6 +14,7 @@ import chatapp.model.NetworkMessage;
 import chatapp.model.NetworkMessage.MessageType;
 import chatapp.model.Room;
 import chatapp.model.User;
+import chatapp.service.AIService;
 
 
 public class ClientHandler implements Runnable {

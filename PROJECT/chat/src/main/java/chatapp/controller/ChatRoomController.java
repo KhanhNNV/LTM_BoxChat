@@ -131,7 +131,7 @@ public class ChatRoomController extends BaseController {
                 }
 
                 // dinh nghia regex
-                String nameValidationRegex = "^[a-zA-Z][a-zA-Z0-9 ]*$";
+                String nameValidationRegex = "^[\\p{L}][\\p{L}0-9 ]*$"; // Cho phép ký tự Unicode (bao gồm tiếng Việt)
                 // 3. Kiểm tra tên phòng với Regex
                 if (!name.matches(nameValidationRegex)) {
                     showAlert(Alert.AlertType.ERROR, "Room name invalid !\n\n" +

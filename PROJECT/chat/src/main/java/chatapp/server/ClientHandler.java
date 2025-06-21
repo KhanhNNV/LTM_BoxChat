@@ -211,6 +211,8 @@ public class ClientHandler implements Runnable {
                 currentUser.getId());
 
         if (newRoom != null) {
+            this.currentRoomId = newRoom.getId();
+            Server.addUserToRoom(newRoom.getId(), this);
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED, newRoom));
         } else {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,

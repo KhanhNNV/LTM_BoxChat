@@ -12,13 +12,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import chatapp.model.NetworkMessage;
+import chatapp.model.User;
 
 public class Server {
     private static final int PORT = 12345; // Cổng mà server sẽ lắng nghe
     private static final ExecutorService pool = Executors.newCachedThreadPool();
     // Map<GroupId, List<ClientHandler>>
     private static final Map<Integer, List<ClientHandler>> roomClients = new ConcurrentHashMap<>();
-    private static final Map<Integer, ClientHandler> onlineUsers = new ConcurrentHashMap<>();
+    static final Map<Integer, ClientHandler> onlineUsers = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         System.out.println("Server is running and waiting for clients...");
@@ -89,6 +90,32 @@ public class Server {
 
     public static void removeOnlineUser(int userId) {
         onlineUsers.remove(userId);
+    }
+
+    public static void broadcastUserStatusUpdate(User userWithStatus, ClientHandler excludedHandler) {
+        // System.out.println("Broadcasting status update for user " +
+        // userWithStatus.getId() + ": "
+        // + (userWithStatus.isOnline() ? "Online" : "Offline"));
+        NetworkMessage statusUpdateMessage = new NetworkMessage(NetworkMessage.MessageType.USER_STATUS_UPDATE,
+                userWithStatus);
+
+        // Gửi cho tất cả các user đang online
+        for (ClientHandler handler : onlineUsers.values()) {
+            if (handler != excludedHandler) {
+                handler.sendMessage(statusUpdateMessage);
+            } else {
+                System.out.println("[DEBUG/Broadcast] Skipping excluded handler: " + handler.getUsername()); // DEBUG
+            }
+        }
+    }
+
+    public static void broadcastToAllInRoom(int groupId, chatapp.model.NetworkMessage message) {
+        List<ClientHandler> clientsInRoom = roomClients.get(groupId);
+        if (clientsInRoom != null) {
+            for (ClientHandler client : clientsInRoom) {
+                client.sendMessage(message);
+            }
+        }
     }
 
 }

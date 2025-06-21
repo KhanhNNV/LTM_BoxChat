@@ -62,7 +62,7 @@ public class NetworkMessage implements Serializable {
         RECEIVE_FILES, // Server phản hồi yêu cầu tham gia phòng đã tham gia
         FILE_TRANSFER_ERROR,
         MEMBER_REMOVED_SUCCESS, // Gửi cho leader để xác nhận
-        MEMBER_LIST_UPDATE, // Gửi cho cả phòng để cập nhật danh sách
-        YOU_HAVE_BEEN_REMOVED // Gửi riêng cho người bị xóa
+        YOU_HAVE_BEEN_REMOVED, // Gửi riêng cho người bị xóa
+        USER_STATUS_UPDATE, // Server gửi cho client khi có người online/offline
     }
 }

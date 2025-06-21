@@ -8,7 +8,9 @@ import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import chatapp.Main;
@@ -45,6 +47,8 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
@@ -125,6 +129,11 @@ public class PrivateRoomController extends BaseController {
     @FXML
     private HBox passwordRow;
 
+    @FXML
+    private ImageView userAvatarImageView;
+    @FXML
+    private Label usernameLabelInHeader;
+
     private boolean emojiPaneVisible = false;
 
     private List<Room> allGroups = new ArrayList<>();
@@ -132,6 +141,7 @@ public class PrivateRoomController extends BaseController {
     private Room currentRoom;
     private User currentUser;
     private boolean roomListenersInitialized = false;
+    private Map<Integer, Boolean> userStatusMap = new HashMap<>(); // Luu trạng thái online/offline của người dùng
 
     // Khởi tạo
     @FXML
@@ -336,12 +346,25 @@ public class PrivateRoomController extends BaseController {
                     showRoomHistory(history);
                     break;
                 case MEMBERS_GROUP_RESPONSE:
-                    List<User> members = (List<User>) message.getPayload();
-                    showGroupMembers(members);
+                    List<User> membersWithStatus = (List<User>) message.getPayload();
+                    // Cập nhật map trạng thái từ danh sách nhận được
+                    userStatusMap.clear();
+                    for (User u : membersWithStatus) {
+                        userStatusMap.put(u.getId(), u.isOnline());
+                    }
+                    showGroupMembers(membersWithStatus); // Gọi phương thức hiển thị
+                    break;
+                case USER_STATUS_UPDATE:
+                    User userWithStatus = (User) message.getPayload();
+                    // Cập nhật trạng thái của user cụ thể
+                    userStatusMap.put(userWithStatus.getId(), userWithStatus.isOnline());
+                    // Cập nhật lại ListView để vẽ lại cell của user đó
+                    memberListView.refresh();
                     break;
                 case USER_RESPONSE:
                     this.currentUser = (User) message.getPayload();
                     updateUserInfoUI();
+                    updatePersonalizedUI(); // Cập nhật giao diện cá nhân hóa
                     break;
                 case JOIN_EXISTING_ROOM_RESPONSE:
                     if (message.getPayload() instanceof Room) {
@@ -794,6 +817,23 @@ public class PrivateRoomController extends BaseController {
         }
     }
 
+    private void updatePersonalizedUI() {
+        if (currentUser != null) {
+            String displayName = (currentUser.getFullName() != null && !currentUser.getFullName().isEmpty())
+                    ? currentUser.getFullName()
+                    : currentUser.getUsername();
+
+            // Cập nhật Label mới
+            usernameLabelInHeader.setText(displayName);
+
+            // Ví dụ: nếu user có trường avatarUrl
+            // if (currentUser.getAvatarUrl() != null &&
+            // !currentUser.getAvatarUrl().isEmpty()) {
+            // userAvatarImageView.setImage(new Image(currentUser.getAvatarUrl()));
+            // }
+        }
+    }
+
     @FXML
     private void showMenu(MouseEvent event) {
         menuPopup.setVisible(true);
@@ -971,6 +1011,7 @@ public class PrivateRoomController extends BaseController {
         private Label nameLabel = new Label();
         private Button removeButton = new Button("Xóa");
         private Region spacer = new Region();
+        private Circle statusCircle = new Circle(5);
 
         public MemberListCell() {
             super();
@@ -978,7 +1019,7 @@ public class PrivateRoomController extends BaseController {
             // Cấu hình layout cho cell
             HBox.setHgrow(spacer, Priority.ALWAYS); // Để nút "Xóa" luôn ở bên phải
             hbox.setAlignment(Pos.CENTER_LEFT);
-            hbox.getChildren().addAll(nameLabel, spacer, removeButton);
+            hbox.getChildren().addAll(statusCircle, nameLabel, spacer, removeButton);
 
             // Thêm style cho nút xóa để nó nhỏ và đẹp hơn
             removeButton.setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #b71c1c; -fx-font-size: 10px;");
@@ -1024,6 +1065,16 @@ public class PrivateRoomController extends BaseController {
             } else {
                 // Nếu có dữ liệu, hiển thị tên và nút
                 nameLabel.setText(user.getFullName() + " (@" + user.getUsername() + ")");
+
+                // Hiển thị trạng thái trực tuyến
+                boolean isOnline = userStatusMap.getOrDefault(user.getId(), false);
+                if (isOnline) {
+                    statusCircle.setFill(Color.LIMEGREEN);
+                    statusCircle.setStroke(Color.DARKGREEN);
+                } else {
+                    statusCircle.setFill(Color.LIGHTGRAY);
+                    statusCircle.setStroke(Color.DARKGRAY);
+                }
 
                 // Điều kiện hiển thị nút "Xóa":
                 // 1. Người đang xem phải là leader (biến isLeader của PrivateRoomController).

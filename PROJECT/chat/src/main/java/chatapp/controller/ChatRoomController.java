@@ -10,7 +10,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import chatapp.model.Client;
-import chatapp.model.CreateRoomPayload;
 import chatapp.model.NetworkMessage;
 import chatapp.model.Room;
 import chatapp.model.User;
@@ -32,6 +31,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 public class ChatRoomController extends BaseController {
@@ -83,12 +83,19 @@ public class ChatRoomController extends BaseController {
     @FXML
     private void handleCreateRoom() {
         try {
+            // Lấy Stage (cửa sổ) hiện tại
+            Stage ownerStage = (Stage) groupContainer.getScene().getWindow();
+
             // 1. Tải FXML của Dialog
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chatapp/create_room.fxml"));
             GridPane dialogContent = loader.load();
 
             // 2. Tạo Dialog và đặt nội dung là FXML đã tải
             Dialog<ButtonType> dialog = new Dialog<>();
+            // Gắn dialog vào cửa sổ cha (quan trọng)
+            dialog.initOwner(ownerStage);
+            dialog.initModality(Modality.WINDOW_MODAL); // Khóa cửa sổ cha
+
             dialog.setTitle("Tạo phòng chat mới");
             dialog.getDialogPane().setContent(dialogContent);
 
@@ -96,16 +103,24 @@ public class ChatRoomController extends BaseController {
             ButtonType createButtonType = new ButtonType("Tạo phòng", ButtonData.OK_DONE);
             dialog.getDialogPane().getButtonTypes().addAll(createButtonType, ButtonType.CANCEL);
 
-            // Lấy các control từ FXML để xử lý sau này
-            TextField newRoomNameField = (TextField) dialogContent.lookup("#newRoomNameField");
-            PasswordField newRoomPasswordField = (PasswordField) dialogContent.lookup("#newRoomPasswordField");
-            TextArea memberEmailsTextArea = (TextArea) dialogContent.lookup("#memberEmailsTextArea");
-            // Logic cho avatar sẽ được thêm sau
+            // Làm mờ cửa sổ cha khi mở dialog
+            groupContainer.setEffect(new javafx.scene.effect.GaussianBlur(10)); // Làm mờ
+            groupContainer.setOpacity(0.8); // Giảm độ trong suốt
 
-            // 4. Xử lý kết quả khi người dùng nhấn nút
+            // 6. Xử lý kết quả khi dialog đóng lại
             Optional<ButtonType> result = dialog.showAndWait();
 
+            // Xóa hiệu ứng làm mờ sau khi dialog đã đóng
+            groupContainer.setEffect(null);
+            groupContainer.setOpacity(1.0);
+
+            // Logic cho avatar sẽ được thêm sau
+
             if (result.isPresent() && result.get() == createButtonType) {
+                // Lấy các control từ FXML để xử lý sau này
+                TextField newRoomNameField = (TextField) dialogContent.lookup("#newRoomNameField");
+                PasswordField newRoomPasswordField = (PasswordField) dialogContent.lookup("#newRoomPasswordField");
+                TextArea memberEmailsTextArea = (TextArea) dialogContent.lookup("#memberEmailsTextArea");
                 // Người dùng đã nhấn "Tạo phòng"
                 String name = newRoomNameField.getText().trim();
                 String password = newRoomPasswordField.getText();
@@ -133,9 +148,15 @@ public class ChatRoomController extends BaseController {
                         .filter(email -> !email.isEmpty())
                         .collect(Collectors.toList());
 
-                // Tạo một đối tượng payload mới để gửi lên server
-                CreateRoomPayload payload = new CreateRoomPayload(name, password, memberEmails);
-                NetworkMessage request = new NetworkMessage(NetworkMessage.MessageType.CREATE_ROOM_REQUEST, payload);
+                // Tạo một đối tượng mới để gửi lên server
+                Room roomToCreate = new Room();
+                roomToCreate.setName(name);
+                roomToCreate.setPassword(password);
+                roomToCreate.setMemberEmails(memberEmails); // Gán danh sách email
+
+                // 2. Gửi đối tượng Room đi
+                NetworkMessage request = new NetworkMessage(NetworkMessage.MessageType.CREATE_ROOM_REQUEST,
+                        roomToCreate);
                 Client.getInstance().sendMessage(request);
                 addStatusMessage("Đang gửi yêu cầu tạo phòng...");
             }

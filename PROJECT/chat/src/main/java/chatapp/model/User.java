@@ -8,10 +8,12 @@ public class User implements Serializable { // Implement Serializable
     private String password;
     private String gmail; // Thêm trường email
     private String fullName; // Thêm trường fullName
+    private boolean isOnline;
 
-    public User(){
-
+    public User() {
+        this.isOnline = false; // Mặc định là offline
     }
+
     public User(String username, String password) {
         this.username = username;
         this.password = password;
@@ -63,5 +65,13 @@ public class User implements Serializable { // Implement Serializable
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public boolean isOnline() {
+        return isOnline;
+    }
+
+    public void setOnline(boolean online) {
+        isOnline = online;
     }
 }

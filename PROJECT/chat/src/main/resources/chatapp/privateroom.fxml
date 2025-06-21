@@ -35,13 +35,21 @@
                     <AnchorPane fx:id="listGroupContainer" minHeight="0.0" minWidth="0.0" prefHeight="459.0" prefWidth="198.0" styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css">
                       <children>
                         <Pane fx:id="headerGroup" prefHeight="62.0" prefWidth="198.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
-                          <children>
-                            <Label layoutX="26.0" layoutY="18.0" prefHeight="27.0" prefWidth="147.0" text="Danh Sách Nhóm">
-                              <font>
-                                <Font name="System Bold" size="18.0"/>
-                              </font>
-                            </Label>
-                          </children>
+                          <HBox alignment="CENTER_LEFT" layoutX="8.0" layoutY="8.0" prefHeight="46.0" prefWidth="182.0" spacing="10.0">
+                            <children>
+                              <ImageView fx:id="userAvatarImageView" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                <image>
+                                  <!-- Avatar mặc định -->
+                                  <Image url="@../image/icon_avatar.png"/>
+                                </image>
+                              </ImageView>
+                              <Label fx:id="usernameLabelInHeader" text="Username">
+                                <font>
+                                  <Font name="System Bold" size="16.0"/>
+                                </font>
+                              </Label>
+                            </children>
+                          </HBox>
                         </Pane>
                         <!--chứa tên group-->
                       </children>

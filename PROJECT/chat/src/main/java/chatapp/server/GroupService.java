@@ -374,7 +374,7 @@ public class GroupService {
                     stmtAddMembers.executeUpdate();
                 }
 
-                newRoom = new Room(name, null);
+                newRoom = new Room(name, password, leaderId);
                 newRoom.setId(groupId);
             }
 

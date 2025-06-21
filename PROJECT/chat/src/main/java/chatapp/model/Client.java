@@ -48,16 +48,23 @@ public class Client {
     private void startListening() {
         new Thread(() -> {
             try {
+                System.out.println("[DEBUG/Client Listener] Starting to listen for messages from server..."); // DEBUG
                 while (!socket.isClosed()) {
                     NetworkMessage message = (NetworkMessage) in.readObject();
+                    System.out.println("[DEBUG/Client Listener] Raw message received. Type: " + message.getType());
                     if (onMessageReceived != null) {
                         // Cập nhật UI trên JavaFX Application Thread
                         Platform.runLater(() -> onMessageReceived.accept(message));
+                    } else {
+                        System.out.println(
+                                "[DEBUG/Client Listener] WARNING: onMessageReceived is NULL. Message not handled."); // DEBUG
                     }
                 }
             } catch (IOException | ClassNotFoundException e) {
                 System.out.println("Disconnected from server.");
                 // Platform.runLater(() -> showAlert(...));
+            } finally {
+                System.out.println("[DEBUG/Client Listener] Listener thread stopped."); // DEBUG
             }
         }).start();
     }

@@ -1,12 +1,26 @@
 // Sửa lại PrivateRoomController.java
 package chatapp.controller;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
 import chatapp.Main;
 import chatapp.model.*;
+import chatapp.model.NetworkMessage.MessageType;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.geometry.Bounds;
@@ -16,6 +30,15 @@ import javafx.geometry.Side;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyEvent;
@@ -120,6 +143,15 @@ public class PrivateRoomController extends BaseController {
     private ImageView iconSendEmoji; // ImageView của icon emoji
     @FXML
     private Pane emojiOverlay;
+    @FXML
+    private Button leaveRoomButton;
+    @FXML
+    private HBox passwordRow;
+
+    @FXML
+    private ImageView userAvatarImageView;
+    @FXML
+    private Label usernameLabelInHeader;
 
     @FXML private StackPane mainStackPane; // Thêm biến này
 
@@ -130,6 +162,7 @@ public class PrivateRoomController extends BaseController {
     private Room currentRoom;
     private User currentUser;
     private boolean roomListenersInitialized = false;
+    private Map<Integer, Boolean> userStatusMap = new HashMap<>(); // Luu trạng thái online/offline của người dùng
 
     @FXML private TextField searchField;
     private List<Message> allMessages = new ArrayList<>();
@@ -350,7 +383,7 @@ public class PrivateRoomController extends BaseController {
 
         // Đặt grid vào ScrollPane
         emojiPane.setContent(emojiGrid);
-        //emojiPane.addEventFilter(MouseEvent.MOUSE_CLICKED, Event::consume);
+        // emojiPane.addEventFilter(MouseEvent.MOUSE_CLICKED, Event::consume);
     }
 
     // Thêm phương thức hiển thị/ẩn emoji pane
@@ -375,6 +408,7 @@ public class PrivateRoomController extends BaseController {
             event.consume();
         }
     }
+
     private void hideEmojiPane(MouseEvent event) {
         emojiPane.setVisible(false);
         emojiOverlay.setVisible(false);
@@ -426,16 +460,13 @@ public class PrivateRoomController extends BaseController {
                         fileName,
                         fileType,
                         fileData.length,
-                        base64Data
-                );
+                        base64Data);
 
                 // Gửi message
                 Client.getInstance().sendMessage(
                         new NetworkMessage(
                                 NetworkMessage.MessageType.SEND_MESSAGE_REQUEST,
-                                fileMessage
-                        )
-                );
+                                fileMessage));
             } catch (Exception e) {
                 e.printStackTrace();
                 showAlert("Lỗi", "Không thể đọc file: " + e.getMessage());
@@ -443,117 +474,166 @@ public class PrivateRoomController extends BaseController {
         }
     }
 
-
     @Override
     protected void handleServerMessage(NetworkMessage message) {
-        switch (message.getType()) {
-            case RECEIVE_MESSAGE:
-                Message chatMessage = (Message) message.getPayload();
-                addMessageToUI(chatMessage);
-                break;
-            case USER_JOINED_ROOM:
-                // Hiển thị thông báo có người mới vào
-                break;
-            case USER_LEFT_ROOM:
-                // Hiển thị thông báo có người rời đi
-                break;
-            case ROOM_HISTORY_RESPONSE:
-                List<Message> history = (List<Message>) message.getPayload();
-                showRoomHistory(history);
-                break;
-            case MEMBERS_GROUP_RESPONSE:
-                List<User> members = (List<User>) message.getPayload();
-                showGroupMembers(members);
-                break;
-            case USER_RESPONSE:
-                this.currentUser = (User) message.getPayload();
-                updateUserInfoUI();
-                break;
-            case JOIN_EXISTING_ROOM_RESPONSE:
-                if (message.getPayload() instanceof Room) {
-                    Room joinedRoom = (Room) message.getPayload();
-                    // Cập nhật giao diện với phòng mới
-                    setRoom(joinedRoom);
-                    refreshRoomList();
-                }
-                break;
-            // Xử lý các loại message khác...
-            case CHANGE_PASSWORD_SUCCESS:
-                // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
-                showAlert("Thành công", (String) message.getPayload());
-                break;
+        Platform.runLater(() -> {
+            switch (message.getType()) {
+                case RECEIVE_MESSAGE:
+                    Message chatMessage = (Message) message.getPayload();
+                    addMessageToUI(chatMessage);
+                    break;
+                case USER_JOINED_ROOM:
+                    // Hiển thị thông báo có người mới vào
+                    break;
+                case USER_LEFT_ROOM:
+                    showAlert(Alert.AlertType.INFORMATION, "Bạn đã rời khỏi phòng.");
+                    try {
+                        Main.setRoot("chatapp/chatroom");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case ROOM_DELETED:
+                    Message notification = (Message) message.getPayload();
+                    // Hiển thị thông báo và tự động quay về sảnh chờ
+                    showAlert(Alert.AlertType.WARNING, notification.getContent());
+                    try {
+                        Main.setRoot("chatapp/chatroom");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                case ROOM_HISTORY_RESPONSE:
+                    List<Message> history = (List<Message>) message.getPayload();
+                    showRoomHistory(history);
+                    break;
+                case MEMBERS_GROUP_RESPONSE:
+                    List<User> membersWithStatus = (List<User>) message.getPayload();
+                    // Cập nhật map trạng thái từ danh sách nhận được
+                    userStatusMap.clear();
+                    for (User u : membersWithStatus) {
+                        userStatusMap.put(u.getId(), u.isOnline());
+                    }
+                    showGroupMembers(membersWithStatus); // Gọi phương thức hiển thị
+                    break;
+                case USER_STATUS_UPDATE:
+                    User userWithStatus = (User) message.getPayload();
+                    // Cập nhật trạng thái của user cụ thể
+                    userStatusMap.put(userWithStatus.getId(), userWithStatus.isOnline());
+                    // Cập nhật lại ListView để vẽ lại cell của user đó
+                    memberListView.refresh();
+                    break;
+                case USER_RESPONSE:
+                    this.currentUser = (User) message.getPayload();
+                    updateUserInfoUI();
+                    updatePersonalizedUI(); // Cập nhật giao diện cá nhân hóa
+                    break;
+                case JOIN_EXISTING_ROOM_RESPONSE:
+                    if (message.getPayload() instanceof Room) {
+                        Room joinedRoom = (Room) message.getPayload();
+                        // Cập nhật giao diện với phòng mới
+                        setRoom(joinedRoom);
+                        refreshRoomList();
+                    }
+                    break;
+                case BACK_HOME_SUCCESS:
+                    try {
+                        // Quay về màn hình chọn phòng
+                        Main.setRoot("chatapp/chatroom");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        showAlert(Alert.AlertType.ERROR, "Lỗi: Không thể quay về màn hình chính.");
+                    }
+                    break;
+                case YOU_HAVE_BEEN_REMOVED: // Tin nhắn riêng cho người bị xóa
+                    showAlert(Alert.AlertType.WARNING, "Bạn đã bị trưởng phòng xóa khỏi nhóm.");
+                    try {
+                        Main.setRoot("chatapp/chatroom");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    break;
+                // Xử lý các loại message khác...
+                case CHANGE_PASSWORD_SUCCESS:
+                    // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
+                    showAlert("Thành công", (String) message.getPayload());
+                    break;
 
-            case CHANGE_PASSWORD_FAILURE:
-                // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
-                showAlert("Lỗi", (String) message.getPayload());
-                break;
-            case UPDATE_FULLNAME_SUCCESS:
-                showAlert("Thành công", (String) message.getPayload());
-                requestCurrentUser(); // Lấy lại thông tin user mới
-                break;
-            case UPDATE_FULLNAME_FAILURE:
-                showAlert("Lỗi", (String) message.getPayload());
-                break;
-            case UPDATE_GMAIL_SUCCESS:
-                showAlert("Thành công", (String) message.getPayload());
-                requestCurrentUser(); // Lấy lại thông tin user mới
-                break;
-            case UPDATE_GMAIL_FAILURE:
-                showAlert("Lỗi", (String) message.getPayload());
-                break;
-            case UPDATE_ROOM_NAME_SUCCESS:
-                if (message.getPayload() instanceof Room) {
-                    Room updatedRoom = (Room) message.getPayload();
+                case CHANGE_PASSWORD_FAILURE:
+                    // SỬA LỖI Ở ĐÂY: Thay bằng showAlert(String, String)
+                    showAlert("Lỗi", (String) message.getPayload());
+                    break;
+                case UPDATE_FULLNAME_SUCCESS:
+                    showAlert("Thành công", (String) message.getPayload());
+                    requestCurrentUser(); // Lấy lại thông tin user mới
+                    break;
+                case UPDATE_FULLNAME_FAILURE:
+                    showAlert("Lỗi", (String) message.getPayload());
+                    break;
+                case UPDATE_GMAIL_SUCCESS:
+                    showAlert("Thành công", (String) message.getPayload());
+                    requestCurrentUser(); // Lấy lại thông tin user mới
+                    break;
+                case UPDATE_GMAIL_FAILURE:
+                    showAlert("Lỗi", (String) message.getPayload());
+                    break;
+                case UPDATE_ROOM_NAME_SUCCESS:
+                    if (message.getPayload() instanceof Room) {
+                        Room updatedRoom = (Room) message.getPayload();
 
-                    // 1. Cập nhật thông tin phòng hiện tại
-                    currentRoom.setName(updatedRoom.getName());
+                        // 1. Cập nhật thông tin phòng hiện tại
+                        currentRoom.setName(updatedRoom.getName());
 
-                    // 2. Cập nhật UI ngay lập tức
-                    groupNameLabel.setText(updatedRoom.getName());  // Header
-                    infoNameGroup.setText(updatedRoom.getName());  // Popup menu
+                        // 2. Cập nhật UI ngay lập tức
+                        groupNameLabel.setText(updatedRoom.getName());  // Header
+                        infoNameGroup.setText(updatedRoom.getName());  // Popup menu
 
-                    // 3. CẬP NHẬT DANH SÁCH NHÓM BÊN TRÁI
-                    refreshRoomList(updatedRoom);
+                        // 3. CẬP NHẬT DANH SÁCH NHÓM BÊN TRÁI
+                        refreshRoomList(updatedRoom);
 
-                    showAlert("Thành công", "Đã đổi tên phòng thành công!");
-                }
-                break;
+                        showAlert("Thành công", "Đã đổi tên phòng thành công!");
+                    }
+                    break;
 
-            case UPDATE_ROOM_NAME_FAILURE:
-                showAlert("Lỗi", message.getPayload() != null
-                        ? message.getPayload().toString()
-                        : "Không thể đổi tên phòng");
-                break;
+                case UPDATE_ROOM_NAME_FAILURE:
+                    showAlert("Lỗi", message.getPayload() != null
+                            ? message.getPayload().toString()
+                            : "Không thể đổi tên phòng");
+                    break;
 
-            case UPDATE_ROOM_PASSWORD_SUCCESS:
-                // Cập nhật mật khẩu mới trong currentRoom
-                if (message.getPayload() instanceof Room) {
-                    Room updatedRoom = (Room) message.getPayload();
-                    currentRoom.setPassword(updatedRoom.getPassword());
-                    infoPassGroup.setText(updatedRoom.getPassword()); // Cập nhật UI
-                    showAlert("Thành công", "Đã cập nhật mật khẩu phòng thành công!");
-                } else {
-                    showAlert("Thông báo", "Mật khẩu phòng đã được cập nhật");
-                }
-                break;
+                case UPDATE_ROOM_PASSWORD_SUCCESS:
+                    // Cập nhật mật khẩu mới trong currentRoom
+                    if (message.getPayload() instanceof Room) {
+                        Room updatedRoom = (Room) message.getPayload();
+                        currentRoom.setPassword(updatedRoom.getPassword());
+                        infoPassGroup.setText(updatedRoom.getPassword()); // Cập nhật UI
+                        showAlert("Thành công", "Đã cập nhật mật khẩu phòng thành công!");
+                    } else {
+                        showAlert("Thông báo", "Mật khẩu phòng đã được cập nhật");
+                    }
+                    break;
 
-            case UPDATE_ROOM_PASSWORD_FAILURE:
-                showAlert("Lỗi", message.getPayload() != null
-                        ? message.getPayload().toString()
-                        : "Không thể cập nhật mật khẩu phòng");
-                break;
-            case SEARCH_ROOM_RESPONSE:
-                List<Room> searchResults = (List<Room>) message.getPayload();
-                String keyword = searchRoomField.getText().trim();
-                showListGroups(searchResults, keyword);
-                break;
-            case JOINED_GROUPS_RESPONSE:
-                allGroups = (List<Room>) message.getPayload();
-                showListGroups(allGroups, ""); // Thêm tham số thứ 2 là chuỗi rỗng
-                break;
-
-        }
+                case UPDATE_ROOM_PASSWORD_FAILURE:
+                    showAlert("Lỗi", message.getPayload() != null
+                            ? message.getPayload().toString()
+                            : "Không thể cập nhật mật khẩu phòng");
+                    break;
+                case SEARCH_ROOM_RESPONSE:
+                    List<Room> searchResults = (List<Room>) message.getPayload();
+                    String keyword = searchRoomField.getText().trim();
+                    showListGroups(searchResults, keyword);
+                    break;
+                case JOINED_GROUPS_RESPONSE:
+                    allGroups = (List<Room>) message.getPayload();
+                    showListGroups(allGroups, ""); // Thêm tham số thứ 2 là chuỗi rỗng
+                    break;
+                default:
+                    System.out.println("Received message of type: " + message.getType());
+                    break;
+            }
+        });
     }
+
 
 
 //    public void showListGroups(List<Room> rooms) {
@@ -754,42 +834,41 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
 
     }
 
-//public void setRoom(Room room) {
-//    // Dọn dẹp listener và resource của phòng hiện tại trước khi chuyển sang phòng mới
-//    cleanupCurrentRoom();
-//
-//    this.currentRoom = room;
-//    if (room != null) {
-//        groupNameLabel.setText(room.getName());
-//        chatBox.getChildren().clear();
-//        requestRoomHistory(room.getId());
-//        requestGroupMembers(room.getId());
-//        initializeRoomListeners();
-//    }
-//}
-//
-//    private void cleanupCurrentRoom() {
-//        // Dọn dẹp các listener và resource của phòng hiện tại
-//        if (currentRoom != null) {
-//            // Thực hiện các thao tác dọn dẹp cần thiết
-//            chatBox.getChildren().clear();
-//            roomListenersInitialized = false;
-//        }
-//    }
-//
-//    private void initializeRoomListeners() {
-//        if (!roomListenersInitialized) {
-//
-//            roomListenersInitialized = true;
-//        }
-//    }
-
+    // public void setRoom(Room room) {
+    // // Dọn dẹp listener và resource của phòng hiện tại trước khi chuyển sang
+    // phòng mới
+    // cleanupCurrentRoom();
+    //
+    // this.currentRoom = room;
+    // if (room != null) {
+    // groupNameLabel.setText(room.getName());
+    // chatBox.getChildren().clear();
+    // requestRoomHistory(room.getId());
+    // requestGroupMembers(room.getId());
+    // initializeRoomListeners();
+    // }
+    // }
+    //
+    // private void cleanupCurrentRoom() {
+    // // Dọn dẹp các listener và resource của phòng hiện tại
+    // if (currentRoom != null) {
+    // // Thực hiện các thao tác dọn dẹp cần thiết
+    // chatBox.getChildren().clear();
+    // roomListenersInitialized = false;
+    // }
+    // }
+    //
+    // private void initializeRoomListeners() {
+    // if (!roomListenersInitialized) {
+    //
+    // roomListenersInitialized = true;
+    // }
+    // }
 
     private void requestJoinedGroups() {
         NetworkMessage request = new NetworkMessage(
                 NetworkMessage.MessageType.GET_JOINED_GROUPS_REQUEST,
-                null
-        );
+                null);
         Client.getInstance().sendMessage(request);
 
     }
@@ -797,24 +876,21 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     private void requestRoomHistory(int roomId) {
         NetworkMessage request = new NetworkMessage(
                 NetworkMessage.MessageType.GET_ROOM_HISTORY_REQUEST,
-                roomId
-        );
+                roomId);
         Client.getInstance().sendMessage(request);
     }
 
     public void requestGroupMembers(int groupId) {
         NetworkMessage request = new NetworkMessage(
                 NetworkMessage.MessageType.GET_MEMBERS_GROUP_REQUEST,
-                groupId
-        );
+                groupId);
         Client.getInstance().sendMessage(request);
     }
 
     private void requestCurrentUser() {
         NetworkMessage request = new NetworkMessage(
                 NetworkMessage.MessageType.GET_USER_REQUEST,
-                null
-        );
+                null);
         Client.getInstance().sendMessage(request);
     }
 
@@ -1170,41 +1246,52 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     private void showGroupMembers(List<User> members) {
         Platform.runLater(() -> {
             // Xóa dữ liệu cũ
-            memberListView.getItems().clear();
+            // memberListView.getItems().clear();
 
-            // Thiết lập CellFactory để tùy chỉnh hiển thị
-            memberListView.setCellFactory(lv -> new ListCell<User>() {
+            // // Thiết lập CellFactory để tùy chỉnh hiển thị
+            // memberListView.setCellFactory(lv -> new ListCell<User>() {
 
-                private final Label nameLabel = new Label();
-                private final HBox container = new HBox(10);
+            // private final Label nameLabel = new Label();
+            // private final HBox container = new HBox(10);
 
-                {
-                    // Cấu hình giao diện
-                    container.setAlignment(Pos.CENTER_LEFT);
-                    container.getChildren().addAll(nameLabel);
-                }
+            // {
+            // // Cấu hình giao diện
+            // container.setAlignment(Pos.CENTER_LEFT);
+            // container.getChildren().addAll(nameLabel);
+            // }
 
-                @Override
-                protected void updateItem(User user, boolean empty) {
-                    super.updateItem(user, empty);
+            // @Override
+            // protected void updateItem(User user, boolean empty) {
+            // super.updateItem(user, empty);
 
-                    if (empty || user == null) {
-                        setText(null);
-                        setGraphic(null);
-                    } else {
-                        // Hiển thị tên người dùng (ưu tiên fullname)
-                        String displayName = user.getFullName() != null && !user.getFullName().isEmpty()
-                                ? user.getFullName()
-                                : user.getUsername();
-                        nameLabel.setText(displayName);
+            // if (empty || user == null) {
+            // setText(null);
+            // setGraphic(null);
+            // } else {
+            // // Hiển thị tên người dùng (ưu tiên fullname)
+            // String displayName = user.getFullName() != null &&
+            // !user.getFullName().isEmpty()
+            // ? user.getFullName()
+            // : user.getUsername();
+            // nameLabel.setText(displayName);
 
-                        // Có thể thêm logic load avatar riêng ở đây nếu cần
-                        setGraphic(container);
-                    }
-                }
-            });
+            // // Có thể thêm logic load avatar riêng ở đây nếu cần
+            // setGraphic(container);
+            // }
+            // }
+            // });
             // Thêm tất cả thành viên vào ListView
-            memberListView.getItems().addAll(members);
+            // memberListView.getItems().addAll(members);
+
+            // 1. Gán CellFactory cho ListView.
+            memberListView.setCellFactory(lv -> new MemberListCell());
+            // 2. Xóa dữ liệu cũ và thêm dữ liệu mới.
+            // Dùng setItems sẽ hiệu quả hơn clear() và addAll().
+            if (members != null) {
+                memberListView.setItems(FXCollections.observableArrayList(members));
+            } else {
+                memberListView.getItems().clear(); // Nếu danh sách là null thì xóa trắng
+            }
         });
     }
 
@@ -1219,6 +1306,22 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         }
     }
 
+    private void updatePersonalizedUI() {
+        if (currentUser != null) {
+            String displayName = (currentUser.getFullName() != null && !currentUser.getFullName().isEmpty())
+                    ? currentUser.getFullName()
+                    : currentUser.getUsername();
+
+            // Cập nhật Label mới
+            usernameLabelInHeader.setText(displayName);
+
+            // Ví dụ: nếu user có trường avatarUrl
+            // if (currentUser.getAvatarUrl() != null &&
+            // !currentUser.getAvatarUrl().isEmpty()) {
+            // userAvatarImageView.setImage(new Image(currentUser.getAvatarUrl()));
+            // }
+        }
+    }
 
     @FXML
     private void showMenu(MouseEvent event) {
@@ -1227,16 +1330,22 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         overlay2.setVisible(true);
         menuPopup.setManaged(true);
 
+        infoNameGroup.setText(currentRoom.getName());
+        infoIdGroup.setText(String.valueOf(currentRoom.getId()));
         // Kiểm tra nếu người dùng hiện tại là leader
         if (currentRoom != null && currentUser != null &&
                 currentUser.getId() == currentRoom.getLeaderId()) {
-            infoNameGroup.setText(currentRoom.getName());
-            infoIdGroup.setText(String.valueOf(currentRoom.getId()));
-            infoPassGroup.setText(currentRoom.getPassword());
+            // Hiển thị thông tin nhóm đầy đủ nếu là leader
+            passwordRow.setVisible(true);
+            passwordRow.setManaged(true);
+            infoPassGroup.setText(String.valueOf(currentRoom.getPassword()));
         } else {
-            infoNameGroup.setText("Không có quyền xem");
-            infoIdGroup.setText("");
-            infoPassGroup.setText("");
+            // infoNameGroup.setText("Không có quyền xem");
+            // infoIdGroup.setText("");
+            // infoPassGroup.setText("");
+            // Ẩn các thông tin nếu không phải leader
+            passwordRow.setVisible(false);
+            passwordRow.setManaged(false);
         }
     }
 
@@ -1264,11 +1373,10 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     }
 
     @FXML
-    private void showSearchBox2(MouseEvent event){
-        if(searchPopup2.isVisible()){
+    private void showSearchBox2(MouseEvent event) {
+        if (searchPopup2.isVisible()) {
             searchPopup2.setVisible(false);
-        }
-        else{
+        } else {
             searchPopup2.setVisible(true);
         }
     }
@@ -1311,7 +1419,7 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
 
     // Hàm thoát
     @FXML
-    public void exit(MouseEvent event){
+    public void exit(MouseEvent event) {
         event.consume(); // Ngăn đóng ngay lập tức
         // Hiển thị hộp thoại xác nhận
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
@@ -1327,14 +1435,16 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
 
     @FXML
     private void handleHomeClick(MouseEvent event) {
-        // Gửi yêu cầu rời phòng đến server
+        // Gửi yêu cầu trở về home đến server
         Client.getInstance()
-                .sendMessage(new NetworkMessage(NetworkMessage.MessageType.LEAVE_ROOM_REQUEST, currentRoom.getId()));
+                .sendMessage(new NetworkMessage(NetworkMessage.MessageType.BACK_HOME_REQUEST, null));
+        // Không cần chờ phản hồi từ server, sẽ tự động chuyển
         try {
             // Quay về màn hình chọn phòng
             Main.setRoot("chatapp/chatroom");
         } catch (Exception e) {
             e.printStackTrace();
+            showAlert(Alert.AlertType.ERROR, "Lỗi: Không thể quay về màn hình chính.");
         }
     }
 
@@ -1625,5 +1735,137 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         Client.getInstance().sendMessage(request);
     }
 
-}
+    private void showAlert(Alert.AlertType type, String msg) {
+        Alert alert = new Alert(type);
+        alert.setTitle("Thông báo");
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
+    }
 
+    /**
+     * Phương thức này được gọi khi người dùng nhấn vào nút "Rời nhóm".
+     * Nó sẽ hiển thị một hộp thoại xác nhận trước khi thực hiện hành động.
+     */
+    @FXML
+    public void handleLeaveRoom() {
+        // Kiểm tra xem người dùng có thực sự ở trong phòng không
+        if (currentRoom == null) {
+            showAlert(Alert.AlertType.ERROR, "Lỗi: Không tìm thấy thông tin phòng hiện tại.");
+            return;
+        }
+
+        // Tạo một hộp thoại xác nhận
+        Alert confirmationDialog = new Alert(Alert.AlertType.CONFIRMATION);
+        confirmationDialog.setTitle("Xác nhận rời phòng");
+        confirmationDialog.setHeaderText("Bạn có chắc chắn muốn rời khỏi phòng '" + currentRoom.getName() + "' không?");
+        confirmationDialog
+                .setContentText("Hành động này không thể hoàn tác. Nếu bạn là trưởng phòng, phòng sẽ bị giải tán.");
+
+        // Hiển thị hộp thoại và chờ người dùng phản hồi
+        Optional<ButtonType> result = confirmationDialog.showAndWait();
+
+        // Chỉ xử lý nếu người dùng nhấn nút "OK"
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Người dùng đã xác nhận
+            // Gửi yêu cầu rời phòng đến server
+            // Không cần payload phức tạp, server biết user nào đang gửi yêu cầu
+            // và họ đang ở trong phòng nào (dựa trên currentRoomId của ClientHandler)
+            NetworkMessage leaveRequest = new NetworkMessage(MessageType.LEAVE_ROOM_REQUEST, null);
+            Client.getInstance().sendMessage(leaveRequest);
+
+            // Ghi chú: Việc chuyển về màn hình chatroom sẽ được xử lý khi nhận được
+            // phản hồi từ server (USER_LEFT_ROOM hoặc ROOM_DELETED).
+            // Không nên chuyển màn hình ngay tại đây.
+        } else {
+            // Người dùng đã nhấn "Cancel" hoặc đóng hộp thoại, không làm gì cả.
+            System.out.println("Hành động rời phòng đã được hủy.");
+        }
+    }
+
+    // LỚP NỘI BỘ ĐỂ CUSTOM CELL
+    private class MemberListCell extends ListCell<User> {
+        private HBox hbox = new HBox(10);
+        private Label nameLabel = new Label();
+        private Button removeButton = new Button("Xóa");
+        private Region spacer = new Region();
+        private Circle statusCircle = new Circle(5);
+
+        public MemberListCell() {
+            super();
+
+            // Cấu hình layout cho cell
+            HBox.setHgrow(spacer, Priority.ALWAYS); // Để nút "Xóa" luôn ở bên phải
+            hbox.setAlignment(Pos.CENTER_LEFT);
+            hbox.getChildren().addAll(statusCircle, nameLabel, spacer, removeButton);
+
+            // Thêm style cho nút xóa để nó nhỏ và đẹp hơn
+            removeButton.setStyle("-fx-background-color: #ffcdd2; -fx-text-fill: #b71c1c; -fx-font-size: 10px;");
+
+            // =======================================================
+            // XỬ LÝ SỰ KIỆN CHO NÚT XÓA - PHẦN QUAN TRỌNG NHẤT
+            // =======================================================
+            removeButton.setOnAction(event -> {
+                // Lấy đối tượng User tương ứng với dòng này
+                User userToRemove = getItem();
+
+                // Kiểm tra để chắc chắn rằng có một user để xóa
+                if (userToRemove == null) {
+                    return;
+                }
+
+                // Tạo một dialog xác nhận để tránh xóa nhầm
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+                alert.setTitle("Xác nhận xóa thành viên");
+                alert.setHeaderText("Bạn có chắc chắn muốn xóa thành viên '" + userToRemove.getFullName() + "'?");
+                alert.setContentText("Hành động này sẽ xóa họ khỏi phòng chat.");
+
+                // Chờ người dùng nhấn "OK" hoặc "Cancel"
+                Optional<ButtonType> result = alert.showAndWait();
+
+                if (result.isPresent() && result.get() == ButtonType.OK) {
+                    // Người dùng đã xác nhận
+                    System.out.println("Leader requested to remove user with ID: " + userToRemove.getId());
+
+                    // Gửi yêu cầu lên server với payload là ID của người cần xóa
+                    Client.getInstance().sendMessage(
+                            new NetworkMessage(NetworkMessage.MessageType.REMOVE_MEMBER_REQUEST, userToRemove.getId()));
+                }
+            });
+        }
+
+        @Override
+        protected void updateItem(User user, boolean empty) {
+            super.updateItem(user, empty);
+            if (empty || user == null) {
+                // Nếu dòng rỗng, không hiển thị gì cả
+                setGraphic(null);
+            } else {
+                // Nếu có dữ liệu, hiển thị tên và nút
+                nameLabel.setText(user.getFullName() + " (@" + user.getUsername() + ")");
+
+                // Hiển thị trạng thái trực tuyến
+                boolean isOnline = userStatusMap.getOrDefault(user.getId(), false);
+                if (isOnline) {
+                    statusCircle.setFill(Color.LIMEGREEN);
+                    statusCircle.setStroke(Color.DARKGREEN);
+                } else {
+                    statusCircle.setFill(Color.LIGHTGRAY);
+                    statusCircle.setStroke(Color.DARKGRAY);
+                }
+
+                // Điều kiện hiển thị nút "Xóa":
+                // 1. Người đang xem phải là leader (biến isLeader của PrivateRoomController).
+                // 2. Thành viên trong dòng này không phải là chính leader đó (leader không thể
+                // tự xóa mình).
+                boolean canRemove = currentRoom != null && currentUser != null &&
+                        currentUser.getId() == currentRoom.getLeaderId() && user.getId() != currentUser.getId();
+                removeButton.setVisible(canRemove);
+                removeButton.setManaged(canRemove); // Quan trọng: setManaged(false) để nút không chiếm không gian khi
+                                                    // bị ẩn
+                // Đặt HBox làm nội dung đồ họa cho cell
+                setGraphic(hbox);
+            }
+        }
+    }
+}

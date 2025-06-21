@@ -39,3 +39,30 @@ CREATE TABLE Messages (
     FOREIGN KEY (user_id) REFERENCES Users (id),
     FOREIGN KEY (group_id) REFERENCES Groups (id)
 );
+
+SHOW CREATE TABLE `User_Group`;
+
+ALTER TABLE `Groups` DROP FOREIGN KEY `groups_ibfk_1`;
+
+ALTER TABLE `Groups`
+ADD CONSTRAINT `fk_groups_leader` FOREIGN KEY (leader_id) REFERENCES Users (id) ON DELETE SET NULL;
+
+ALTER TABLE `User_Group` DROP FOREIGN KEY `user_group_ibfk_1`;
+
+ALTER TABLE `User_Group` DROP FOREIGN KEY `user_group_ibfk_2`;
+
+ALTER TABLE `User_Group`
+ADD CONSTRAINT `fk_usergroup_user` FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE CASCADE;
+
+ALTER TABLE `User_Group`
+ADD CONSTRAINT `fk_usergroup_group` FOREIGN KEY (group_id) REFERENCES `Groups` (id) ON DELETE CASCADE;
+
+ALTER TABLE `Messages` DROP FOREIGN KEY `messages_ibfk_1`;
+
+ALTER TABLE `Messages` DROP FOREIGN KEY `messages_ibfk_2`;
+
+ALTER TABLE `Messages`
+ADD CONSTRAINT `fk_messages_user` FOREIGN KEY (user_id) REFERENCES Users (id) ON DELETE SET NULL;
+
+ALTER TABLE `Messages`
+ADD CONSTRAINT `fk_messages_group` FOREIGN KEY (group_id) REFERENCES `Groups` (id) ON DELETE CASCADE;

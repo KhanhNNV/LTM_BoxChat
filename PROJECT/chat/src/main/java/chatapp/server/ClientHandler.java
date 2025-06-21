@@ -9,8 +9,12 @@ import java.sql.SQLException; // Tái sử dụng DBConfig
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import chatapp.model.Message;
+import chatapp.model.NetworkMessage;
+import chatapp.model.NetworkMessage.MessageType;
+import chatapp.model.Room;
+import chatapp.model.User;
 
-import chatapp.model.*;
 
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
@@ -20,6 +24,15 @@ public class ClientHandler implements Runnable {
     private GroupService groupService;
     private User currentUser;
     private int currentRoomId = -1;
+
+    public void setCurrentRoomId(int roomId) {
+        this.currentRoomId = roomId;
+    }
+
+    // Bạn cũng nên có một getter để đọc giá trị này nếu cần
+    public int getCurrentRoomId() {
+        return this.currentRoomId;
+    }
 
     public ClientHandler(Socket socket) {
         this.clientSocket = socket;
@@ -51,6 +64,14 @@ public class ClientHandler implements Runnable {
             if (currentRoomId != -1) {
                 Server.removeUserFromRoom(currentRoomId, this);
             }
+            if (currentUser != null) {
+                User userWithStatus = new User();
+                userWithStatus.setId(currentUser.getId());
+                userWithStatus.setOnline(false); // Đã offline
+
+                Server.broadcastUserStatusUpdate(userWithStatus, this);
+                Server.removeOnlineUser(currentUser.getId()); // THÊM DÒNG NÀY
+            }
             try {
                 clientSocket.close();
             } catch (IOException e) {
@@ -69,6 +90,7 @@ public class ClientHandler implements Runnable {
                     handleRegister((User) message.getPayload());
                     break;
                 case CREATE_ROOM_REQUEST:
+                    // handleCreateRoom((Room) message.getPayload());
                     handleCreateRoom((Room) message.getPayload());
                     break;
                 case JOIN_ROOM_REQUEST:
@@ -78,15 +100,7 @@ public class ClientHandler implements Runnable {
                     handleSendMessage((String) message.getPayload());
                     break;
                 case LEAVE_ROOM_REQUEST:
-                    if (currentRoomId != -1) {
-                        Server.removeUserFromRoom(currentRoomId, this);
-                        currentRoomId = -1;
-                        sendMessage(new NetworkMessage(NetworkMessage.MessageType.USER_LEFT_ROOM,
-                                "You have left the room."));
-                    } else {
-                        sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-                                "You are not in any room."));
-                    }
+                    handleLeaveRoom();
                     break;
                 case GET_JOINED_GROUPS_REQUEST:
                     handleGetJoinedGroups();
@@ -102,6 +116,21 @@ public class ClientHandler implements Runnable {
                     break;
                 case JOIN_EXISTING_ROOM_REQUEST:
                     handleJoinExistingRoom((Integer) message.getPayload());
+                    break;
+                case BACK_HOME_REQUEST:
+                    // Xử lý yêu cầu trở về trang chủ
+                    if (currentRoomId != -1) {
+                        this.currentRoomId = -1; // Reset current room ID
+                    }
+                    sendMessage(new NetworkMessage(NetworkMessage.MessageType.BACK_HOME_SUCCESS,
+                            "Back to home"));
+                    break;
+                case REMOVE_MEMBER_REQUEST:
+                    // Lấy payload là ID của người cần xóa
+                    int memberIdToRemove = (Integer) message.getPayload();
+
+                    // GỌI PHƯƠNG THỨC XỬ LÝ
+                    handleRemoveMember(memberIdToRemove);
                     break;
                 case CHANGE_PASSWORD_REQUEST:
                     Map<String, Object> payload = (Map<String, Object>) message.getPayload();
@@ -122,8 +151,6 @@ public class ClientHandler implements Runnable {
                 case SEARCH_ROOM_REQUEST:
                     handleSearchRoomRequest((String) message.getPayload());
                     break;
-
-
                 default:
                     // System.out.println("Received unknown message type: " + message.getType());
                     // // Có thể gửi thông báo lỗi về cho client
@@ -144,13 +171,17 @@ public class ClientHandler implements Runnable {
         User loggedInUser = userService.login(user.getUsername(), user.getPassword());
         if (loggedInUser != null) {
             this.currentUser = loggedInUser;
+            Server.addOnlineUser(loggedInUser.getId(), this);// THÊM DÒNG NÀY
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_SUCCESS, loggedInUser));
+            // THÔNG BÁO CHO CÁC CLIENT KHÁC
+            User userWithStatus = new User();
+            userWithStatus.setId(loggedInUser.getId());
+            userWithStatus.setOnline(true); // Đã online
+            Server.broadcastUserStatusUpdate(userWithStatus, this);
         } else {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_FAILURE, "Invalid username or password."));
         }
     }
-
-
 
     private void handleRegister(User user) throws SQLException {
         String result = userService.register(user.getUsername(), user.getPassword(), user.getGmail(),
@@ -162,20 +193,51 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    private void handleCreateRoom(Room room) throws SQLException {
-        // Chỉ user đã đăng nhập mới được tạo phòng
+    // private void handleCreateRoom(Room room) throws SQLException {
+    // // Chỉ user đã đăng nhập mới được tạo phòng
+    // if (currentUser == null) {
+    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
+    // "You must be logged in to create a room."));
+    // return;
+    // }
+    // Room newRoom = groupService.createGroup(room.getName(), room.getPassword(),
+    // currentUser.getId());
+    // if (newRoom != null) {
+    // this.currentRoomId = newRoom.getId();
+    // Server.addUserToRoom(newRoom.getId(), this);
+    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED,
+    // newRoom));
+    // } else {
+    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
+    // "Room name already exists."));
+    // }
+    // }
+
+    private void handleCreateRoom(Room roomToCreate) throws SQLException {
         if (currentUser == null) {
-            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to create a room."));
+            sendMessage(
+                    new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "Bạn phải đăng nhập để tạo phòng."));
             return;
         }
-        Room newRoom = groupService.createGroup(room.getName(), room.getPassword(), currentUser.getId());
+
+        // Room newRoom = groupService.createGroupWithMembers(
+        // roomToCreate.getName(),
+        // roomToCreate.getPassword(),
+        // currentUser.getId(),
+        // roomToCreate.getMemberEmails() // Lấy danh sách email từ đối tượng Room
+        // );
+        Room newRoom = groupService.createGroup(
+                roomToCreate.getName(),
+                roomToCreate.getPassword(),
+                currentUser.getId());
+
         if (newRoom != null) {
             this.currentRoomId = newRoom.getId();
             Server.addUserToRoom(newRoom.getId(), this);
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED, newRoom));
         } else {
-            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "Room name already exists."));
+            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "Tạo phòng thất bại. Tên phòng có thể đã tồn tại."));
         }
     }
 
@@ -185,14 +247,18 @@ public class ClientHandler implements Runnable {
                     "You must be logged in to join a room."));
             return;
         }
-        Room joinedRoom = groupService.joinGroup(room.getName(), room.getPassword(), currentUser.getId());
+
+        // yeu cau nhap id phong > 0
+        if (room.getId() <= 0) {
+            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_JOIN_FAILED,
+                    "Yêu cầu tham gia không hợp lệ (thiếu ID phòng)."));
+            return;
+        }
+
+        Room joinedRoom = groupService.joinGroup(room.getId(), room.getPassword(), currentUser.getId());
         if (joinedRoom != null) {
             this.currentRoomId = joinedRoom.getId();
             Server.addUserToRoom(joinedRoom.getId(), this);
-
-            // Lấy thông tin leader từ phòng (giả sử joinedRoom đã có leaderId từ server)
-            int leaderId = joinedRoom.getLeaderId();
-            joinedRoom.setLeaderId(leaderId); // Đảm bảo leaderId được set
 
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_JOINED, joinedRoom));
             // Thông báo cho những người khác trong phòng
@@ -200,12 +266,31 @@ public class ClientHandler implements Runnable {
                     currentUser.getUsername() + " has joined the room.");
             Server.broadcastMessage(joinedRoom.getId(),
                     new NetworkMessage(NetworkMessage.MessageType.RECEIVE_MESSAGE, notification), this);
+            try {
+                // Lấy danh sách member mới nhất từ DB (đã bao gồm người vừa join)
+                List<User> updatedMembers = groupService.getMembersGroupList(joinedRoom.getId());
+
+                // Cập nhật trạng thái online/offline cho danh sách này
+                for (User member : updatedMembers) {
+                    if (Server.onlineUsers.containsKey(member.getId())) {
+                        member.setOnline(true);
+                    }
+                }
+
+                // Gói vào message
+                NetworkMessage memberListUpdateMsg = new NetworkMessage(
+                        NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
+                        updatedMembers);
+                Server.broadcastToAllInRoom(joinedRoom.getId(), memberListUpdateMsg);
+
+            } catch (SQLException e) {
+                System.err.println("Error getting and broadcasting updated member list: " + e.getMessage());
+            }
         } else {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_JOIN_FAILED,
                     "Room not found or password incorrect."));
         }
     }
-
 
     private void handleSendMessage(String content) throws SQLException {
         if (currentUser == null || currentRoomId == -1) {
@@ -230,14 +315,12 @@ public class ClientHandler implements Runnable {
                         currentRoomId,
                         fileName,
                         fileType,
-                        fileData
-                );
+                        fileData);
 
                 if (newMessage != null) {
                     NetworkMessage broadcastMsg = new NetworkMessage(
                             NetworkMessage.MessageType.RECEIVE_MESSAGE,
-                            newMessage
-                    );
+                            newMessage);
                     Server.broadcastMessage(currentRoomId, broadcastMsg, null);
                 }
             }
@@ -246,14 +329,12 @@ public class ClientHandler implements Runnable {
             Message newMessage = groupService.saveMessage(
                     currentUser.getId(),
                     currentRoomId,
-                    content
-            );
+                    content);
 
             if (newMessage != null) {
                 NetworkMessage broadcastMsg = new NetworkMessage(
                         NetworkMessage.MessageType.RECEIVE_MESSAGE,
-                        newMessage
-                );
+                        newMessage);
                 Server.broadcastMessage(currentRoomId, broadcastMsg, null);
             }
         }
@@ -264,13 +345,11 @@ public class ClientHandler implements Runnable {
         if (user != null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.USER_RESPONSE,
-                    user
-            ));
+                    user));
         } else {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "User not found"
-            ));
+                    "User not found"));
         }
     }
 
@@ -287,58 +366,66 @@ public class ClientHandler implements Runnable {
         if (currentUser == null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to view groups."
-            ));
+                    "You must be logged in to view groups."));
             return;
         }
 
         List<Room> joinedGroups = groupService.getJoinedGroups(currentUser.getId());
         sendMessage(new NetworkMessage(
                 NetworkMessage.MessageType.JOINED_GROUPS_RESPONSE,
-                joinedGroups
-        ));
+                joinedGroups));
     }
 
     private void handleGetRoomHistory(int roomId) throws SQLException {
         if (currentUser == null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to view room history."
-            ));
+                    "You must be logged in to view room history."));
             return;
         }
 
         List<Message> history = groupService.getRoomHistory(roomId, currentUser.getId());
         sendMessage(new NetworkMessage(
                 NetworkMessage.MessageType.ROOM_HISTORY_RESPONSE,
-                history
-        ));
+                history));
     }
 
-    private void handleGetMembersGroupList(int groupId) throws  SQLException{
+    private void handleGetMembersGroupList(int groupId) throws SQLException {
         if (currentUser == null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to view room history."
-            ));
+                    "You must be logged in to view room history."));
             return;
         }
         List<User> members = groupService.getMembersGroupList(groupId);
+        for (User member : members) {
+            // Kiểm tra xem ID của thành viên có trong danh sách online của Server không
+            if (Server.onlineUsers.containsKey(member.getId())) {
+                member.setOnline(true);
+            } else {
+                member.setOnline(false);
+            }
+        }
         sendMessage(new NetworkMessage(
                 NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
-                members
-        ));
+                members));
     }
 
     private void handleJoinExistingRoom(int roomId) throws SQLException {
         if (currentUser == null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to join a room."
-            ));
+                    "You must be logged in to join a room."));
             return;
         }
 
+        // Kiểm tra xem user đã ở trong phòng này chưa
+        if (currentRoomId == roomId) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You are already in this room."));
+            return;
+        }
         // Kiểm tra xem user đã ở trong phòng này chưa
         if (currentRoomId == roomId) {
             sendMessage(new NetworkMessage(
@@ -352,8 +439,7 @@ public class ClientHandler implements Runnable {
         if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You are not a member of this room."
-            ));
+                    "You are not a member of this room."));
             return;
         }
 
@@ -372,17 +458,133 @@ public class ClientHandler implements Runnable {
             // Gửi phản hồi thành công với thông tin phòng
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-                    room
-            ));
-
+                    room));
 
         } else {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "Room not found."
-            ));
+                    "Room not found."));
         }
     }
+
+    private void handleLeaveRoom() throws SQLException {
+        // Kiểm tra xem user có đang ở trong phòng nào không
+        if (currentRoomId == -1) {
+            sendMessage(new NetworkMessage(MessageType.ERROR_RESPONSE, "Bạn không ở trong phòng nào cả."));
+            return;
+        }
+
+        int roomToLeaveId = this.currentRoomId;
+
+        // Kiểm tra xem người dùng có phải là leader của phòng này không
+        boolean isLeader = groupService.isUserLeaderOfGroup(currentUser.getId(), roomToLeaveId);
+
+        if (isLeader) {
+            // --- LOGIC KHI LEADER RỜI ĐI ---
+
+            // 1. Xóa phòng khỏi database
+            boolean deleted = groupService.deleteGroup(roomToLeaveId);
+
+            if (deleted) {
+                // 2. Thông báo cho tất cả thành viên (bao gồm cả leader) rằng phòng đã bị giải
+                // tán
+                String notificationContent = "Trưởng phòng (" + currentUser.getUsername()
+                        + ") đã rời đi. Phòng đã được giải tán.";
+                Message notificationMsg = new Message(0, "System", roomToLeaveId, notificationContent);
+                NetworkMessage broadcastMsg = new NetworkMessage(MessageType.ROOM_DELETED, notificationMsg);
+
+                // Broadcast cho tất cả client trong phòng trước khi xóa phòng khỏi Server
+                Server.broadcastMessage(roomToLeaveId, broadcastMsg, null);
+
+                // 3. Xóa phòng khỏi bộ nhớ của server
+                Server.removeAllUsersFromRoom(roomToLeaveId);
+
+                // Cập nhật trạng thái của ClientHandler này
+                this.currentRoomId = -1;
+
+                // Ghi chú: Không cần gửi thêm tin nhắn riêng cho leader,
+                // vì leader cũng nhận được tin nhắn broadcast ROOM_DELETED.
+
+            } else {
+                // Có lỗi khi xóa phòng
+                sendMessage(new NetworkMessage(MessageType.ERROR_RESPONSE, "Lỗi: không thể xóa phòng."));
+            }
+
+        } else {
+            // --- LOGIC KHI THÀNH VIÊN THƯỜNG RỜI ĐI ---
+
+            // 1. Xóa user khỏi phòng trong Server và DB
+            Server.removeUserFromRoom(roomToLeaveId, this); // Xóa khỏi bộ nhớ server
+            groupService.removeUserFromGroup(currentUser.getId(), roomToLeaveId); // Xóa khỏi DB
+
+            // 2. Thông báo cho bản thân user đã rời phòng thành công
+            sendMessage(new NetworkMessage(MessageType.USER_LEFT_ROOM, "Bạn đã rời khỏi phòng."));
+
+            // 3. Cập nhật danh sách thành viên trong phòng
+            List<User> updatedMembers = groupService.getMembersGroupList(roomToLeaveId);
+
+            for (User member : updatedMembers) {
+                if (Server.onlineUsers.containsKey(member.getId())) {
+                    member.setOnline(true);
+                }
+            }
+
+            NetworkMessage memberListUpdateMsg = new NetworkMessage(
+                    NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
+                    updatedMembers);
+
+            // Gửi danh sách mới cho TẤT CẢ mọi người đang online trong phòng
+            Server.broadcastToAllInRoom(roomToLeaveId, memberListUpdateMsg);
+
+            // 4. Thông báo cho những người còn lại trong phòng
+            String notificationContent = currentUser.getUsername() + " đã rời khỏi phòng.";
+            Message notificationMsg = new Message(0, "System", roomToLeaveId, notificationContent);
+            NetworkMessage broadcastMsg = new NetworkMessage(MessageType.RECEIVE_MESSAGE, notificationMsg);
+
+            Server.broadcastMessage(roomToLeaveId, broadcastMsg, this); // Gửi cho mọi người trừ người vừa rời
+
+            // 5. Cập nhật trạng thái của ClientHandler
+            this.currentRoomId = -1;
+        }
+    }
+
+    private void handleRemoveMember(int memberIdToRemove) throws SQLException {
+        if (currentRoomId == -1) {
+            sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "Bạn không ở trong phòng nào."));
+            return;
+        }
+
+        boolean success = groupService.removeMemberFromGroup(memberIdToRemove, currentRoomId, currentUser.getId());
+
+        if (success) {
+            // 1. Báo thành công cho leader
+            sendMessage(new NetworkMessage(MessageType.MEMBER_REMOVED_SUCCESS, "Đã xóa thành viên."));
+
+            // 2. Gửi danh sách thành viên mới cho tất cả mọi người trong phòng
+            List<User> updatedMembers = groupService.getMembersGroupList(currentRoomId);
+
+            for (User member : updatedMembers) {
+                if (Server.onlineUsers.containsKey(member.getId())) {
+                    member.setOnline(true);
+                }
+            }
+
+            NetworkMessage memberListUpdateMsg = new NetworkMessage(
+                    NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
+                    updatedMembers);
+
+            // Gửi danh sách mới cho TẤT CẢ mọi người đang online trong phòng
+            Server.broadcastToAllInRoom(currentRoomId, memberListUpdateMsg);
+
+            // 3. Tìm ClientHandler của người bị xóa và báo cho họ
+            Server.notifyUserRemoved(memberIdToRemove, currentRoomId);
+
+        } else {
+            sendMessage(new NetworkMessage(MessageType.ERROR_RESPONSE,
+                    "Không thể xóa thành viên. Bạn không có quyền hoặc người dùng không tồn tại."));
+        }
+    }
+
     /// code sua thong tin
     private void handleChangePassword(Map<String, Object> payload) {
 
@@ -571,3 +773,4 @@ public class ClientHandler implements Runnable {
     }
 
 }
+

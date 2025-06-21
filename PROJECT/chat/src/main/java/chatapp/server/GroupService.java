@@ -9,7 +9,6 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -334,59 +333,65 @@ public class GroupService {
     }
 
     // Thêm phương thức mới: thêm thành viên bằng email
-    public Room createGroupWithMembers(String name, String password, int leaderId, List<String> memberEmails)
-            throws SQLException {
-        Room newRoom = null;
+    // public Room createGroupWithMembers(String name, String password, int
+    // leaderId, List<String> memberEmails)
+    // throws SQLException {
+    // Room newRoom = null;
 
-        connection.setAutoCommit(false);
-        try {
-            // 1. Tạo phòng và lấy ID
-            String sqlGroup = "INSERT INTO `Groups` (name, password, leader_id) VALUES (?, ?, ?)";
-            PreparedStatement stmtGroup = connection.prepareStatement(sqlGroup, Statement.RETURN_GENERATED_KEYS);
-            stmtGroup.setString(1, name);
-            stmtGroup.setString(2, password);
-            stmtGroup.setInt(3, leaderId);
-            stmtGroup.executeUpdate();
+    // connection.setAutoCommit(false);
+    // try {
+    // // 1. Tạo phòng và lấy ID
+    // String sqlGroup = "INSERT INTO `Groups` (name, password, leader_id) VALUES
+    // (?, ?, ?)";
+    // PreparedStatement stmtGroup = connection.prepareStatement(sqlGroup,
+    // Statement.RETURN_GENERATED_KEYS);
+    // stmtGroup.setString(1, name);
+    // stmtGroup.setString(2, password);
+    // stmtGroup.setInt(3, leaderId);
+    // stmtGroup.executeUpdate();
 
-            ResultSet generatedKeys = stmtGroup.getGeneratedKeys();
-            if (generatedKeys.next()) {
-                int groupId = generatedKeys.getInt(1);
+    // ResultSet generatedKeys = stmtGroup.getGeneratedKeys();
+    // if (generatedKeys.next()) {
+    // int groupId = generatedKeys.getInt(1);
 
-                // 2. Thêm người tạo vào phòng
-                String sqlAddLeader = "INSERT INTO User_Group (user_id, group_id) VALUES (?, ?)";
-                PreparedStatement stmtAddLeader = connection.prepareStatement(sqlAddLeader);
-                stmtAddLeader.setInt(1, leaderId);
-                stmtAddLeader.setInt(2, groupId);
-                stmtAddLeader.executeUpdate();
+    // // 2. Thêm người tạo vào phòng
+    // String sqlAddLeader = "INSERT INTO User_Group (user_id, group_id) VALUES (?,
+    // ?)";
+    // PreparedStatement stmtAddLeader = connection.prepareStatement(sqlAddLeader);
+    // stmtAddLeader.setInt(1, leaderId);
+    // stmtAddLeader.setInt(2, groupId);
+    // stmtAddLeader.executeUpdate();
 
-                // 3. Thêm các thành viên khác dựa trên email
-                if (memberEmails != null && !memberEmails.isEmpty()) {
-                    // Chuyển đổi danh sách email thành chuỗi (?,?,?) để dùng trong câu lệnh IN
-                    String placeholders = String.join(",", Collections.nCopies(memberEmails.size(), "?"));
-                    String sqlAddMembers = "INSERT IGNORE INTO User_Group (user_id, group_id) " +
-                            "SELECT id, ? FROM Users WHERE gmail IN (" + placeholders + ")";
+    // // 3. Thêm các thành viên khác dựa trên email
+    // if (memberEmails != null && !memberEmails.isEmpty()) {
+    // // Chuyển đổi danh sách email thành chuỗi (?,?,?) để dùng trong câu lệnh IN
+    // String placeholders = String.join(",",
+    // Collections.nCopies(memberEmails.size(), "?"));
+    // String sqlAddMembers = "INSERT IGNORE INTO User_Group (user_id, group_id) " +
+    // "SELECT id, ? FROM Users WHERE gmail IN (" + placeholders + ")";
 
-                    PreparedStatement stmtAddMembers = connection.prepareStatement(sqlAddMembers);
-                    stmtAddMembers.setInt(1, groupId);
-                    for (int i = 0; i < memberEmails.size(); i++) {
-                        stmtAddMembers.setString(i + 2, memberEmails.get(i));
-                    }
-                    stmtAddMembers.executeUpdate();
-                }
+    // PreparedStatement stmtAddMembers =
+    // connection.prepareStatement(sqlAddMembers);
+    // stmtAddMembers.setInt(1, groupId);
+    // for (int i = 0; i < memberEmails.size(); i++) {
+    // stmtAddMembers.setString(i + 2, memberEmails.get(i));
+    // }
+    // stmtAddMembers.executeUpdate();
+    // }
 
-                newRoom = new Room(name, password, leaderId);
-                newRoom.setId(groupId);
-            }
+    // newRoom = new Room(name, password, leaderId);
+    // newRoom.setId(groupId);
+    // }
 
-            connection.commit();
-        } catch (SQLException e) {
-            connection.rollback();
-            throw e;
-        } finally {
-            connection.setAutoCommit(true);
-        }
-        return newRoom;
-    }
+    // connection.commit();
+    // } catch (SQLException e) {
+    // connection.rollback();
+    // throw e;
+    // } finally {
+    // connection.setAutoCommit(true);
+    // }
+    // return newRoom;
+    // }
 
     // kiểm tra user có phải là leader không
     public boolean isUserLeaderOfGroup(int userId, int groupId) throws SQLException {

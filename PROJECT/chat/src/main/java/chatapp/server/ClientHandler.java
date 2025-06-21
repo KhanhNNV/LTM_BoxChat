@@ -199,12 +199,16 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        Room newRoom = groupService.createGroupWithMembers(
+        // Room newRoom = groupService.createGroupWithMembers(
+        // roomToCreate.getName(),
+        // roomToCreate.getPassword(),
+        // currentUser.getId(),
+        // roomToCreate.getMemberEmails() // Lấy danh sách email từ đối tượng Room
+        // );
+        Room newRoom = groupService.createGroup(
                 roomToCreate.getName(),
                 roomToCreate.getPassword(),
-                currentUser.getId(),
-                roomToCreate.getMemberEmails() // Lấy danh sách email từ đối tượng Room
-        );
+                currentUser.getId());
 
         if (newRoom != null) {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED, newRoom));
@@ -485,14 +489,30 @@ public class ClientHandler implements Runnable {
             // 2. Thông báo cho bản thân user đã rời phòng thành công
             sendMessage(new NetworkMessage(MessageType.USER_LEFT_ROOM, "Bạn đã rời khỏi phòng."));
 
-            // 3. Thông báo cho những người còn lại trong phòng
+            // 3. Cập nhật danh sách thành viên trong phòng
+            List<User> updatedMembers = groupService.getMembersGroupList(roomToLeaveId);
+
+            for (User member : updatedMembers) {
+                if (Server.onlineUsers.containsKey(member.getId())) {
+                    member.setOnline(true);
+                }
+            }
+
+            NetworkMessage memberListUpdateMsg = new NetworkMessage(
+                    NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
+                    updatedMembers);
+
+            // Gửi danh sách mới cho TẤT CẢ mọi người đang online trong phòng
+            Server.broadcastToAllInRoom(roomToLeaveId, memberListUpdateMsg);
+
+            // 4. Thông báo cho những người còn lại trong phòng
             String notificationContent = currentUser.getUsername() + " đã rời khỏi phòng.";
             Message notificationMsg = new Message(0, "System", roomToLeaveId, notificationContent);
             NetworkMessage broadcastMsg = new NetworkMessage(MessageType.RECEIVE_MESSAGE, notificationMsg);
 
             Server.broadcastMessage(roomToLeaveId, broadcastMsg, this); // Gửi cho mọi người trừ người vừa rời
 
-            // 4. Cập nhật trạng thái của ClientHandler
+            // 5. Cập nhật trạng thái của ClientHandler
             this.currentRoomId = -1;
         }
     }

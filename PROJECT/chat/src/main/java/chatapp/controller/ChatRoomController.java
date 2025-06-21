@@ -4,10 +4,8 @@ package chatapp.controller;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import chatapp.model.Client;
 import chatapp.model.NetworkMessage;
@@ -26,7 +24,6 @@ import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
-import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -120,11 +117,12 @@ public class ChatRoomController extends BaseController {
                 // Lấy các control từ FXML để xử lý sau này
                 TextField newRoomNameField = (TextField) dialogContent.lookup("#newRoomNameField");
                 PasswordField newRoomPasswordField = (PasswordField) dialogContent.lookup("#newRoomPasswordField");
-                TextArea memberEmailsTextArea = (TextArea) dialogContent.lookup("#memberEmailsTextArea");
+                // TextArea memberEmailsTextArea = (TextArea)
+                // dialogContent.lookup("#memberEmailsTextArea");
                 // Người dùng đã nhấn "Tạo phòng"
                 String name = newRoomNameField.getText().trim();
                 String password = newRoomPasswordField.getText();
-                String emailsText = memberEmailsTextArea.getText().trim();
+                // String emailsText = memberEmailsTextArea.getText().trim();
 
                 // kiem tra rong
                 if (name.isEmpty() || password.isEmpty()) {
@@ -143,16 +141,16 @@ public class ChatRoomController extends BaseController {
                     return; // Dừng lại nếu tên không hợp lệ
                 }
                 // Chuyển đổi chuỗi emails thành một List<String>
-                List<String> memberEmails = Arrays.stream(emailsText.split("\\n"))
-                        .map(String::trim)
-                        .filter(email -> !email.isEmpty())
-                        .collect(Collectors.toList());
+                // List<String> memberEmails = Arrays.stream(emailsText.split("\\n"))
+                // .map(String::trim)
+                // .filter(email -> !email.isEmpty())
+                // .collect(Collectors.toList());
 
                 // Tạo một đối tượng mới để gửi lên server
                 Room roomToCreate = new Room();
                 roomToCreate.setName(name);
                 roomToCreate.setPassword(password);
-                roomToCreate.setMemberEmails(memberEmails); // Gán danh sách email
+                // roomToCreate.setMemberEmails(memberEmails); // Gán danh sách email
 
                 // 2. Gửi đối tượng Room đi
                 NetworkMessage request = new NetworkMessage(NetworkMessage.MessageType.CREATE_ROOM_REQUEST,

@@ -118,12 +118,15 @@ public class ClientHandler implements Runnable {
                     handleJoinExistingRoom((Integer) message.getPayload());
                     break;
                 case BACK_HOME_REQUEST:
-                    // Xử lý yêu cầu trở về trang chủ
                     if (currentRoomId != -1) {
-                        this.currentRoomId = -1; // Reset current room ID
+                        Server.removeUserFromRoom(currentRoomId, this);
+                        currentRoomId = -1;
+                        sendMessage(new NetworkMessage(NetworkMessage.MessageType.USER_LEFT_ROOM,
+                                "You have left the room."));
+                    } else {
+                        sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
+                                "You are not in any room."));
                     }
-                    sendMessage(new NetworkMessage(NetworkMessage.MessageType.BACK_HOME_SUCCESS,
-                            "Back to home"));
                     break;
                 case REMOVE_MEMBER_REQUEST:
                     // Lấy payload là ID của người cần xóa

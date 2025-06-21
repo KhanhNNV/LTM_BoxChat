@@ -37,7 +37,7 @@
                                             <children>
                                                 <Pane fx:id="headerGroup" prefHeight="62.0" prefWidth="198.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
                                                     <children>
-                                                        <Label layoutX="26.0" layoutY="18.0" prefHeight="27.0" prefWidth="147.0" text="Danh Sách Nhóm">
+                                                        <Label fx:id="usernameLabelInHeader" text="Username">
                                                             <font>
                                                                 <Font name="System Bold" size="18.0" />
                                                             </font>

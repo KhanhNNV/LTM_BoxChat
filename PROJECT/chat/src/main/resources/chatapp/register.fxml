@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox alignment="CENTER" spacing="10.0" stylesheets="@../css/register.css" xmlns:fx="http://javafx.com/fxml" fx:controller="chatapp.controller.RegisterController">
+  <Label text="Đăng ký"/>
+  <TextField fx:id="usernameField" promptText="Tên đăng nhập"/>
+  <TextField fx:id="fullnameField" promptText="Họ và tên"/>
+  <TextField fx:id="gmailField" promptText="Gmail"/>
+  <PasswordField fx:id="passwordField" promptText="Mật khẩu"/>
+  <PasswordField fx:id="confirmPasswordField" promptText="Xác nhận mật khẩu"/>
+  <Button text="Đăng ký" onAction="#handleRegister"/>
+  <Hyperlink text="Đã có tài khoản? Đăng nhập" onAction="#goToLogin"/>
+</VBox>

@@ -17,9 +17,23 @@ module chatapp {
 
     // Xuất các package để các module khác có thể sử dụng
     exports chatapp;
+
+    //opens chatapp.controller to javafx.fxml;
+
     exports chatapp.controller;
+
+    opens chatapp.service to javafx.fxml;
+
     exports chatapp.service;
+
+    opens chatapp.model to javafx.fxml;
+
     exports chatapp.model;
+
+    opens chatapp.server to javafx.fxml;
+
     exports chatapp.server;
     // Dòng 'exports chatapp.util;' đã được xóa
+
+    //requires java.sql;
 }

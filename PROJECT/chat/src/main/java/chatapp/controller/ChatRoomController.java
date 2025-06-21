@@ -7,12 +7,21 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.text.Text;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -38,6 +47,10 @@ public class ChatRoomController extends BaseController {
     @FXML private Text infoFullNameUser;
     @FXML private Text infoUserNameUser;
     @FXML private Text infoGmailUser;
+    @FXML
+    private ListView<String> groupListView;
+
+    @FXML private TextField searchField;
 
     private List<Room> allGroups = new ArrayList<>();
     private User currentUser;
@@ -48,11 +61,13 @@ public class ChatRoomController extends BaseController {
         requestCurrentUser();
     }
 
+
     // === Các hàm quản lý popup (đã được cập nhật) ===
     @FXML
     public void handleShowInfo() {
         if (currentUser == null) {
             showAlert(Alert.AlertType.WARNING, "Đang tải thông tin người dùng, vui lòng thử lại sau.");
+
             return;
         }
         updateUserInfoUI();
@@ -155,7 +170,10 @@ public class ChatRoomController extends BaseController {
         event.consume();
     }
 
-
+    /**
+     * Phương thức này được gọi bởi BaseController khi có tin nhắn từ Server.
+     * Nó sẽ xử lý các phản hồi liên quan đến việc tạo/tham gia phòng.
+     */
     @Override
     protected void handleServerMessage(NetworkMessage message) {
         Platform.runLater(() -> {

@@ -119,6 +119,10 @@ public class ClientHandler implements Runnable {
                 case UPDATE_ROOM_PASSWORD_REQUEST:
                     handleUpdateRoomPassword((Map<String, Object>) message.getPayload());
                     break;
+                case SEARCH_ROOM_REQUEST:
+                    handleSearchRoomRequest((String) message.getPayload());
+                    break;
+
 
                 default:
                     // System.out.println("Received unknown message type: " + message.getType());
@@ -326,50 +330,50 @@ public class ClientHandler implements Runnable {
         ));
     }
 
-private void handleJoinExistingRoom(int roomId) throws SQLException {
-    if (currentUser == null) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You must be logged in to join a room."
-        ));
-        return;
-    }
+    private void handleJoinExistingRoom(int roomId) throws SQLException {
+        if (currentUser == null) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You must be logged in to join a room."
+            ));
+            return;
+        }
 
-    // Kiểm tra xem user đã ở trong phòng này chưa
-    if (currentRoomId == roomId) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You are already in this room."
-        ));
-        return;
-    }
+        // Kiểm tra xem user đã ở trong phòng này chưa
+        if (currentRoomId == roomId) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You are already in this room."
+            ));
+            return;
+        }
 
-    // Kiểm tra xem user có trong phòng không
-    if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.ERROR_RESPONSE,
-                "You are not a member of this room."
-        ));
-        return;
-    }
+        // Kiểm tra xem user có trong phòng không
+        if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You are not a member of this room."
+            ));
+            return;
+        }
 
-    // Rời phòng hiện tại nếu đang ở trong phòng
-    if (currentRoomId != -1) {
-        Server.removeUserFromRoom(currentRoomId, this);
+        // Rời phòng hiện tại nếu đang ở trong phòng
+        if (currentRoomId != -1) {
+            Server.removeUserFromRoom(currentRoomId, this);
 
-    }
+        }
 
-    // Tham gia phòng mới
-    Room room = groupService.getGroupById(roomId);
-    if (room != null) {
-        this.currentRoomId = roomId;
-        Server.addUserToRoom(roomId, this);
+        // Tham gia phòng mới
+        Room room = groupService.getGroupById(roomId);
+        if (room != null) {
+            this.currentRoomId = roomId;
+            Server.addUserToRoom(roomId, this);
 
-        // Gửi phản hồi thành công với thông tin phòng
-        sendMessage(new NetworkMessage(
-                NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
-                room
-        ));
+            // Gửi phản hồi thành công với thông tin phòng
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
+                    room
+            ));
 
 
         } else {
@@ -550,4 +554,20 @@ private void handleJoinExistingRoom(int roomId) throws SQLException {
             ));
         }
     }
+    private void handleSearchRoomRequest(String keyword) throws SQLException {
+        if (currentUser == null) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You must be logged in to search rooms."
+            ));
+            return;
+        }
+
+        List<Room> searchResults = groupService.searchRooms(keyword, currentUser.getId());
+        sendMessage(new NetworkMessage(
+                NetworkMessage.MessageType.SEARCH_ROOM_RESPONSE,
+                searchResults
+        ));
+    }
+
 }

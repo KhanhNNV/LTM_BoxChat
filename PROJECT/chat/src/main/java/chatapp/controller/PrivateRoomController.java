@@ -18,6 +18,7 @@ import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -35,6 +36,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.ByteArrayInputStream;
+import java.util.stream.Collectors;
+
 import javafx.event.Event;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -131,6 +134,7 @@ public class PrivateRoomController extends BaseController {
     @FXML private TextField searchField;
     private List<Message> allMessages = new ArrayList<>();
     private int currentSearchIndex = -1;
+    @FXML private TextField searchRoomField;
 
     // Khởi tạo
     @FXML
@@ -138,6 +142,7 @@ public class PrivateRoomController extends BaseController {
         requestJoinedGroups();
         scrollToBottom();
         requestCurrentUser();
+        overlay.setOnMouseClicked(e -> hideMenu(null));
 
         // Gắn sự kiện đóng cho overlay
         overlay.setOnMouseClicked(event -> {
@@ -174,6 +179,7 @@ public class PrivateRoomController extends BaseController {
                 resetSearchHighlight();
             }
         });
+
 
     }
     // xu ly tiem kiem
@@ -461,10 +467,6 @@ public class PrivateRoomController extends BaseController {
             case USER_LEFT_ROOM:
                 // Hiển thị thông báo có người rời đi
                 break;
-            case JOINED_GROUPS_RESPONSE:
-                allGroups = (List<Room>) message.getPayload();
-                showListGroups(allGroups);
-                break;
             case ROOM_HISTORY_RESPONSE:
                 List<Message> history = (List<Message>) message.getPayload();
                 showRoomHistory(history);
@@ -550,105 +552,204 @@ public class PrivateRoomController extends BaseController {
                         ? message.getPayload().toString()
                         : "Không thể cập nhật mật khẩu phòng");
                 break;
+            case SEARCH_ROOM_RESPONSE:
+                List<Room> searchResults = (List<Room>) message.getPayload();
+                String keyword = searchRoomField.getText().trim();
+                showListGroups(searchResults, keyword);
+                break;
+            case JOINED_GROUPS_RESPONSE:
+                allGroups = (List<Room>) message.getPayload();
+                showListGroups(allGroups, ""); // Thêm tham số thứ 2 là chuỗi rỗng
+                break;
+
         }
     }
 
 
-    public void showListGroups(List<Room> rooms) {
-        listGroupContainer.getChildren().clear();
-        // Giữ lại Pane "Danh Sách Nhóm" từ FXML
-        listGroupContainer.getChildren().clear(); // xóa toàn bộ
-
-        // Thêm lại headerGroup từ @FXML
-        listGroupContainer.getChildren().add(headerGroup); // Đảm bảo nó vẫn còn
-        if (rooms.isEmpty()) {
-            Label emptyLabel = new Label("Bạn chưa tham gia nhóm nào");
-            emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: gray;");
-            emptyLabel.setLayoutX(10);
-            emptyLabel.setLayoutY(10);
-            listGroupContainer.getChildren().add(emptyLabel);
-            return;
-        }
-
-        double layoutY = 62;
-
-        for (Room room : rooms) {
-            // Pane đại diện cho nhóm
-            Pane groupPane = new Pane();
-            groupPane.setPrefSize(198, 62);
-            groupPane.setLayoutY(layoutY);
-            groupPane.setCursor(Cursor.HAND);
-
-            // Xóa tất cả style class trước khi thêm mới
-            groupPane.getStyleClass().clear();
-            groupPane.getStyleClass().add("vien-danh-sach-nhom");
-
-            // Thêm style class tùy theo trạng thái
-            if (currentRoom != null && room.getId() == currentRoom.getId()) {
-                groupPane.getStyleClass().add("active-room");
-            } else {
-                groupPane.getStyleClass().add("normal-room");
-            }
-
-            // Thêm hiệu ứng hover
-            groupPane.setOnMouseEntered(e -> {
-                if (!(currentRoom != null && room.getId() == currentRoom.getId())) {
-                    groupPane.setStyle("-fx-background-color: white;" );
-                }
-            });
-
-            groupPane.setOnMouseExited(e -> {
-                // Luôn reset về màu đúng theo trạng thái active khi chuột rời đi
-                if (currentRoom != null && room.getId() == currentRoom.getId()) {
-                    groupPane.setStyle("-fx-background-color: #a6a6a6;");
-                } else {
-                    groupPane.setStyle("-fx-background-color: #d9d9d9;");
-                }
-            });
-
-            // Bỏ hoàn toàn các listener setOnMouseEntered và setOnMouseExited
-            // vì CSS đã tự xử lý trạng thái :hover cho chúng ta.
-
-            // Thêm sự kiện click
-            groupPane.setOnMouseClicked(e -> {
-                // Gửi yêu cầu tham gia phòng đã tồn tại
-                NetworkMessage request = new NetworkMessage(
-                        NetworkMessage.MessageType.JOIN_EXISTING_ROOM_REQUEST,
-                        room.getId()
-                );
-                Client.getInstance().sendMessage(request);
-            });
-
-            // Label hiển thị tên nhóm
-            Label nameLabel = new Label(room.getName());
-            nameLabel.setLayoutX(8);
-            nameLabel.setLayoutY(17);
-            nameLabel.setPrefSize(158, 27);
-            nameLabel.setFont(new Font(18));
-            nameLabel.setCursor(Cursor.HAND);
-
-            groupPane.getChildren().add(nameLabel);
-
-            // Nếu muốn hiển thị trạng thái như "online"
-//            Circle statusDot = new Circle(180, 31, 4);
-//            statusDot.setFill(Color.DODGERBLUE);
-//            statusDot.setStroke(Color.BLACK);
+//    public void showListGroups(List<Room> rooms) {
+//        listGroupContainer.getChildren().clear();
+//        // Giữ lại Pane "Danh Sách Nhóm" từ FXML
+//        listGroupContainer.getChildren().clear(); // xóa toàn bộ
 //
-//            groupPane.getChildren().add(statusDot);
+//        // Thêm lại headerGroup từ @FXML
+//        listGroupContainer.getChildren().add(headerGroup); // Đảm bảo nó vẫn còn
+//
+//
+//        if (rooms.isEmpty()) {
+//            Label emptyLabel = new Label("Bạn chưa tham gia nhóm nào");
+//            emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: gray;");
+//            emptyLabel.setLayoutX(10);
+//            emptyLabel.setLayoutY(10);
+//            listGroupContainer.getChildren().add(emptyLabel);
+//            return;
+//        }
+//
+//        double layoutY = 62;
+//
+//        for (Room room : rooms) {
+//            // Pane đại diện cho nhóm
+//            Pane groupPane = new Pane();
+//            groupPane.setPrefSize(198, 62);
+//            groupPane.setLayoutY(layoutY);
+//            groupPane.setCursor(Cursor.HAND);
+//
+//            // Xóa tất cả style class trước khi thêm mới
+//            groupPane.getStyleClass().clear();
+//            groupPane.getStyleClass().add("vien-danh-sach-nhom");
+//
+//            // Thêm style class tùy theo trạng thái
+//            if (currentRoom != null && room.getId() == currentRoom.getId()) {
+//                groupPane.getStyleClass().add("active-room");
+//            } else {
+//                groupPane.getStyleClass().add("normal-room");
+//            }
+//
+//            // Thêm hiệu ứng hover
+//            groupPane.setOnMouseEntered(e -> {
+//                if (!(currentRoom != null && room.getId() == currentRoom.getId())) {
+//                    groupPane.setStyle("-fx-background-color: white;" );
+//                }
+//            });
+//
+//            groupPane.setOnMouseExited(e -> {
+//                // Luôn reset về màu đúng theo trạng thái active khi chuột rời đi
+//                if (currentRoom != null && room.getId() == currentRoom.getId()) {
+//                    groupPane.setStyle("-fx-background-color: #a6a6a6;");
+//                } else {
+//                    groupPane.setStyle("-fx-background-color: #d9d9d9;");
+//                }
+//            });
+//
+//
+//            // Thêm sự kiện click
+//            groupPane.setOnMouseClicked(e -> {
+//                // Gửi yêu cầu tham gia phòng đã tồn tại
+//                NetworkMessage request = new NetworkMessage(
+//                        NetworkMessage.MessageType.JOIN_EXISTING_ROOM_REQUEST,
+//                        room.getId()
+//                );
+//                Client.getInstance().sendMessage(request);
+//            });
+//
+//            // Label hiển thị tên nhóm
+//            Label nameLabel = new Label(room.getName());
+//            nameLabel.setLayoutX(8);
+//            nameLabel.setLayoutY(17);
+//            nameLabel.setPrefSize(158, 27);
+//            nameLabel.setFont(new Font(18));
+//            nameLabel.setCursor(Cursor.HAND);
+//
+//            groupPane.getChildren().add(nameLabel);
+//
+//            // Nếu muốn hiển thị trạng thái như "online"
+////            Circle statusDot = new Circle(180, 31, 4);
+////            statusDot.setFill(Color.DODGERBLUE);
+////            statusDot.setStroke(Color.BLACK);
+////
+////            groupPane.getChildren().add(statusDot);
+//
+//            // Thêm vào container
+//            listGroupContainer.getChildren().add(groupPane);
+//
+//            // Tăng layoutY cho nhóm tiếp theo
+//            layoutY += 62;
+//        }
+//
+//        // Cập nhật chiều cao động cho AnchorPane nếu cần
+//        listGroupContainer.setPrefHeight(layoutY);
+//
+//    }
+public void showListGroups(List<Room> rooms, String highlightKeyword) {
+    listGroupContainer.getChildren().clear();
+    // Thêm lại headerGroup từ @FXML
+    listGroupContainer.getChildren().add(headerGroup);
 
-            // Thêm vào container
-            listGroupContainer.getChildren().add(groupPane);
+    if (rooms.isEmpty()) {
+        Label emptyLabel = new Label("Bạn chưa tham gia nhóm nào");
+        emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: gray;");
+        emptyLabel.setLayoutX(10);
+        emptyLabel.setLayoutY(10);
+        listGroupContainer.getChildren().add(emptyLabel);
+        return;
+    }
 
-            // Tăng layoutY cho nhóm tiếp theo
-            layoutY += 62;
+    double layoutY = 62;
+
+    for (Room room : rooms) {
+        // Pane đại diện cho nhóm
+        Pane groupPane = new Pane();
+        groupPane.setPrefSize(198, 62);
+        groupPane.setLayoutY(layoutY);
+        groupPane.setCursor(Cursor.HAND);
+
+        // Xóa tất cả style class trước khi thêm mới
+        groupPane.getStyleClass().clear();
+        groupPane.getStyleClass().add("vien-danh-sach-nhom");
+
+        // Thêm style class tùy theo trạng thái
+        if (currentRoom != null && room.getId() == currentRoom.getId()) {
+            groupPane.getStyleClass().add("active-room");
+        } else {
+            groupPane.getStyleClass().add("normal-room");
         }
 
-        // Cập nhật chiều cao động cho AnchorPane nếu cần
-        listGroupContainer.setPrefHeight(layoutY);
+        // Thêm hiệu ứng hover
+        groupPane.setOnMouseEntered(e -> {
+            if (!(currentRoom != null && room.getId() == currentRoom.getId())) {
+                groupPane.setStyle("-fx-background-color: white;");
+            }
+        });
+
+        groupPane.setOnMouseExited(e -> {
+            // Luôn reset về màu đúng theo trạng thái active khi chuột rời đi
+            if (currentRoom != null && room.getId() == currentRoom.getId()) {
+                groupPane.setStyle("-fx-background-color: #a6a6a6;");
+            } else {
+                groupPane.setStyle("-fx-background-color: #d9d9d9;");
+            }
+        });
+
+        // Thêm sự kiện click
+        groupPane.setOnMouseClicked(e -> {
+            // Gửi yêu cầu tham gia phòng đã tồn tại
+            NetworkMessage request = new NetworkMessage(
+                    NetworkMessage.MessageType.JOIN_EXISTING_ROOM_REQUEST,
+                    room.getId()
+            );
+            Client.getInstance().sendMessage(request);
+        });
+
+        // Label hiển thị tên nhóm
+        Label nameLabel = new Label(room.getName());
+        nameLabel.setLayoutX(8);
+        nameLabel.setLayoutY(17);
+        nameLabel.setPrefSize(158, 27);
+        nameLabel.setFont(new Font(18));
+        nameLabel.setCursor(Cursor.HAND);
+
+        // Highlight nếu có từ khóa tìm kiếm
+        if (highlightKeyword != null && !highlightKeyword.isEmpty() &&
+                room.getName().toLowerCase().contains(highlightKeyword.toLowerCase())) {
+            nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #ff0000;");
+        } else {
+            nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        }
+
+        groupPane.getChildren().add(nameLabel);
+
+        // Thêm vào container
+        listGroupContainer.getChildren().add(groupPane);
+
+        // Tăng layoutY cho nhóm tiếp theo
+        layoutY += 62;
     }
+
+    // Cập nhật chiều cao động cho AnchorPane nếu cần
+    listGroupContainer.setPrefHeight(layoutY);
+}
 
     public void refreshRoomList() {
-        showListGroups(allGroups);
+        showListGroups(allGroups, ""); // Thêm tham số thứ 2
     }
 
     public void setRoom(Room room) {
@@ -1182,7 +1283,6 @@ public class PrivateRoomController extends BaseController {
         }
     }
 
-    // Sửa lại hàm này
     @FXML
     private void showBoxInfo(MouseEvent event) {
         System.out.println("[DEBUG] showBoxInfo được gọi.");
@@ -1501,8 +1601,38 @@ public class PrivateRoomController extends BaseController {
             }
         }
 
-        // Load lại danh sách nhóm
-        showListGroups(allGroups);
+        // Load lại danh sách nhóm với từ khóa tìm kiếm hiện tại (nếu có)
+        String currentKeyword = searchRoomField != null ? searchRoomField.getText().trim() : "";
+        showListGroups(allGroups, currentKeyword);
+    }
+    // Tim Phong
+    @FXML
+    private void handleSearchRoom(ActionEvent event) {
+        String keyword = searchRoomField.getText().trim();
+
+        if (keyword.isEmpty()) {
+            // Nếu từ khóa trống, hiển thị tất cả nhóm không highlight
+            showListGroups(allGroups, "");
+            return;
+        }
+
+        // Lọc danh sách phòng dựa trên từ khóa
+        List<Room> filteredRooms = new ArrayList<>();
+        for (Room room : allGroups) {
+            if (room.getName().toLowerCase().contains(keyword.toLowerCase())) {
+                filteredRooms.add(room);
+            }
+        }
+
+        // Hiển thị kết quả đã lọc với highlight
+        showListGroups(filteredRooms, keyword);
+    }
+    private void requestRoomSearch(String keyword) {
+        NetworkMessage request = new NetworkMessage(
+                NetworkMessage.MessageType.SEARCH_ROOM_REQUEST,
+                keyword
+        );
+        Client.getInstance().sendMessage(request);
     }
 
 }

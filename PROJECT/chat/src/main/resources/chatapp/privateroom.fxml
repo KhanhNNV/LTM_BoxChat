@@ -25,6 +25,7 @@
     <left>
         <StackPane prefHeight="530.0" prefWidth="198.0" BorderPane.alignment="CENTER">
             <children>
+
                 <!-- Danh sách nhóm -->
                 <VBox prefHeight="530.0" prefWidth="198.0" styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css">
                     <children>
@@ -43,6 +44,7 @@
                                                         </Label>
                                                     </children>
                                                 </Pane>
+
                                                 <!--chứa tên group-->
                                             </children>
                                         </AnchorPane>
@@ -50,6 +52,33 @@
                                 </ScrollPane>
                             </children>
                         </Pane>
+<!--                        <Pane fx:id="searchPopup2" prefHeight="68.0" prefWidth="198.0" visible="false">-->
+<!--                            <children>-->
+<!--                                <HBox fx:id="searchPopup1" prefHeight="45.0" prefWidth="191.0">-->
+<!--                                    <children>-->
+<!--                                        <StackPane prefHeight="46.0" prefWidth="233.0">-->
+<!--                                            <children>-->
+<!--                                                <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#e4e4e4" height="42.0" stroke="BLACK" strokeType="INSIDE" width="194.0" />-->
+<!--                                                <TextField prefHeight="26.0" prefWidth="131.0" promptText="Tìm kiếm..." StackPane.alignment="CENTER_LEFT">-->
+<!--                                                    <StackPane.margin>-->
+<!--                                                        <Insets bottom="5.0" left="15.0" right="35.0" top="5.0" />-->
+<!--                                                    </StackPane.margin>-->
+<!--                                                </TextField>-->
+<!--                                                <ImageView fitHeight="17.0" fitWidth="17.0" pickOnBounds="true" preserveRatio="true" StackPane.alignment="CENTER_RIGHT">-->
+<!--                                                    <image>-->
+<!--                                                        <Image url="@../image/icon_Kinhlup2.png" />-->
+<!--                                                    </image>-->
+<!--                                                    <StackPane.margin>-->
+<!--                                                        <Insets right="13.0" />-->
+<!--                                                    </StackPane.margin>-->
+<!--                                                </ImageView>-->
+<!--                                            </children>-->
+<!--                                        </StackPane>-->
+<!--                                    </children>-->
+<!--                                </HBox>-->
+<!--                            </children>-->
+<!--                        </Pane>-->
+                        <!-- Trong phần searchPopup2 -->
                         <Pane fx:id="searchPopup2" prefHeight="68.0" prefWidth="198.0" visible="false">
                             <children>
                                 <HBox fx:id="searchPopup1" prefHeight="45.0" prefWidth="191.0">
@@ -57,23 +86,29 @@
                                         <StackPane prefHeight="46.0" prefWidth="233.0">
                                             <children>
                                                 <Rectangle arcHeight="5.0" arcWidth="5.0" fill="#e4e4e4" height="42.0" stroke="BLACK" strokeType="INSIDE" width="194.0" />
-                                                <TextField prefHeight="26.0" prefWidth="131.0" promptText="Tìm kiếm..." StackPane.alignment="CENTER_LEFT">
+                                                <TextField fx:id="searchRoomField" prefHeight="26.0" prefWidth="131.0" promptText="Tìm phòng..." StackPane.alignment="CENTER_LEFT">
                                                     <StackPane.margin>
                                                         <Insets bottom="5.0" left="15.0" right="35.0" top="5.0" />
                                                     </StackPane.margin>
                                                 </TextField>
-                                                <ImageView fitHeight="17.0" fitWidth="17.0" pickOnBounds="true" preserveRatio="true" StackPane.alignment="CENTER_RIGHT">
-                                                    <image>
-                                                        <Image url="@../image/icon_Kinhlup2.png" />
-                                                    </image>
+                                                <Button onAction="#handleSearchRoom" style="-fx-background-color: transparent;" StackPane.alignment="CENTER_RIGHT">
                                                     <StackPane.margin>
                                                         <Insets right="13.0" />
                                                     </StackPane.margin>
-                                                </ImageView>
+                                                    <graphic>
+                                                        <ImageView fitHeight="17.0" fitWidth="17.0" pickOnBounds="true" preserveRatio="true">
+                                                            <image>
+                                                                <Image url="@../image/icon_Kinhlup2.png" />
+                                                            </image>
+                                                        </ImageView>
+                                                    </graphic>
+                                                </Button>
                                             </children>
                                         </StackPane>
+                                        
                                     </children>
                                 </HBox>
+
                             </children>
                         </Pane>
                         <!-- Khung setting bottom -->

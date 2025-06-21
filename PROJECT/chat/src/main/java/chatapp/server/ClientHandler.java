@@ -119,6 +119,10 @@ public class ClientHandler implements Runnable {
                 case UPDATE_ROOM_PASSWORD_REQUEST:
                     handleUpdateRoomPassword((Map<String, Object>) message.getPayload());
                     break;
+                case SEARCH_ROOM_REQUEST:
+                    handleSearchRoomRequest((String) message.getPayload());
+                    break;
+
 
                 default:
                     // System.out.println("Received unknown message type: " + message.getType());
@@ -550,4 +554,20 @@ public class ClientHandler implements Runnable {
             ));
         }
     }
+    private void handleSearchRoomRequest(String keyword) throws SQLException {
+        if (currentUser == null) {
+            sendMessage(new NetworkMessage(
+                    NetworkMessage.MessageType.ERROR_RESPONSE,
+                    "You must be logged in to search rooms."
+            ));
+            return;
+        }
+
+        List<Room> searchResults = groupService.searchRooms(keyword, currentUser.getId());
+        sendMessage(new NetworkMessage(
+                NetworkMessage.MessageType.SEARCH_ROOM_RESPONSE,
+                searchResults
+        ));
+    }
+
 }

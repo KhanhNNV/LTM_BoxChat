@@ -5,6 +5,7 @@ package chatapp.controller;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import chatapp.model.Client;
 import chatapp.model.NetworkMessage;
@@ -15,9 +16,11 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -44,10 +47,10 @@ public class ChatRoomController extends BaseController {
     @FXML private TextField searchField;
 
     private List<Room> allGroups = new ArrayList<>();
-
     @FXML
     public void initialize() {
         requestJoinedGroups();
+
 
 
     }
@@ -118,6 +121,7 @@ public class ChatRoomController extends BaseController {
             case JOINED_GROUPS_RESPONSE:
                 allGroups = (List<Room>) message.getPayload();
                 showJoinedGroups(allGroups);
+
                 break;
             case USER_RESPONSE:
                 User user = (User) message.getPayload();
@@ -136,6 +140,10 @@ public class ChatRoomController extends BaseController {
                     addStatusMessage("Lỗi: " + error);
                 }
                 break;
+
+
+
+
             default:
                 // Bỏ qua các tin nhắn không liên quan đến màn hình này
                 // (ví dụ: RECEIVE_MESSAGE, LOGIN_SUCCESS...)
@@ -240,6 +248,8 @@ public class ChatRoomController extends BaseController {
     }
 
 
+
+
     private void requestJoinedGroups() {
         NetworkMessage request = new NetworkMessage(
                 NetworkMessage.MessageType.GET_JOINED_GROUPS_REQUEST,
@@ -256,5 +266,7 @@ public class ChatRoomController extends BaseController {
         );
         Client.getInstance().sendMessage(request);
     }
+
+
 
 }

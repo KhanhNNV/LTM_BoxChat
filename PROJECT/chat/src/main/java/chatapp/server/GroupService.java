@@ -354,5 +354,29 @@ public class GroupService {
             return stmt.executeUpdate() > 0;
         }
     }
+    public List<Room> searchRooms(String keyword, int userId) throws SQLException {
+        String sql = """
+        SELECT g.id, g.name, g.password 
+        FROM `groups` g
+        JOIN user_group ug ON g.id = ug.group_id
+        WHERE ug.user_id = ? AND g.name LIKE ?
+    """;
+
+        List<Room> results = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setString(2, "%" + keyword + "%");
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Room room = new Room();
+                room.setId(rs.getInt("id"));
+                room.setName(rs.getString("name"));
+                room.setPassword(rs.getString("password"));
+                results.add(room);
+            }
+        }
+        return results;
+    }
 
 }

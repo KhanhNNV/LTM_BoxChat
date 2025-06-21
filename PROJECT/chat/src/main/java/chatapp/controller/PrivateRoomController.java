@@ -1023,8 +1023,13 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         messageContainer.setPadding(new Insets(5));
         messageContainer.setMaxWidth(580);
 
-        // Tạo avatar
-        ImageView avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
+        // Avatar
+        ImageView avatar;
+        if ("Langflow AI".equalsIgnoreCase(msg.getFullname())) {
+            avatar = new ImageView(new Image(getClass().getResource("/image/icon_ai.png").toExternalForm()));
+        } else {
+            avatar = new ImageView(new Image(getClass().getResource("/image/icon_avatar.png").toExternalForm()));
+        }
         avatar.setFitWidth(42);
         avatar.setFitHeight(44);
         avatar.setPreserveRatio(true);
@@ -1051,6 +1056,13 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         messageFlow.setMaxWidth(480);
         messageFlow.setPadding(new Insets(5));
         messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+
+        // Nền đặc biệt nếu là AI
+        if ("Langflow AI".equalsIgnoreCase(msg.getFullname())) {
+            messageFlow.setStyle("-fx-background-color: #e0f7fa; -fx-background-radius: 10; -fx-border-color: #00acc1; -fx-border-radius: 10;");
+        } else {
+            messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+        }
 
         contentBox.getChildren().addAll(infoBox, messageFlow);
         messageContainer.getChildren().addAll(avatar, contentBox);

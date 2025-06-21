@@ -36,4 +36,5 @@ module chatapp {
     // Dòng 'exports chatapp.util;' đã được xóa
 
     //requires java.sql;
+    requires org.json;
 }

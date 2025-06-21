@@ -327,8 +327,60 @@ public class ClientHandler implements Runnable {
                     Server.broadcastMessage(currentRoomId, broadcastMsg, null);
                 }
             }
-        } else {
-            // Xử lý tin nhắn bình thường
+        }
+        else if (content.startsWith("@ai ")) {
+            String question = content.substring(4).trim();
+
+            // Lưu câu hỏi của người dùng
+            Message userMsg = groupService.saveMessage(
+                    currentUser.getId(),
+                    currentRoomId,
+                    content
+            );
+
+            if (userMsg != null) {
+                Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                        NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                        userMsg
+                ), null);
+            }
+
+            // Tạo thread riêng để gọi AI tránh block main thread
+            new Thread(() -> {
+                try {
+                    AIService aiService = new AIService();
+                    String aiAnswer = aiService.callLangflowAPI(question);
+
+                    if (aiAnswer != null && !aiAnswer.isEmpty()) {
+                        Message aiMsg = groupService.saveMessage(
+                                -1,
+                                currentRoomId,
+                                aiAnswer
+                        );
+
+                        if (aiMsg != null) {
+                            aiMsg.setFullname("Langflow AI");
+                            Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                                    NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                                    aiMsg
+                            ), null);
+
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    // Gửi thông báo lỗi về client
+                    Message errorMsg = new Message(-1, "System", currentRoomId,
+                            "Lỗi khi gọi AI: " + e.getMessage());
+                    Server.broadcastMessage(currentRoomId, new NetworkMessage(
+                            NetworkMessage.MessageType.RECEIVE_MESSAGE,
+                            errorMsg
+                    ), null);
+                }
+            }).start();
+        }
+        // Tin nhắn văn bản bình thường
+        else {
             Message newMessage = groupService.saveMessage(
                     currentUser.getId(),
                     currentRoomId,

@@ -4,6 +4,7 @@ import chatapp.Main;
 import chatapp.model.Client;
 import chatapp.model.NetworkMessage;
 import chatapp.model.User;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
@@ -59,9 +60,20 @@ public class RegisterController extends BaseController { // Kế thừa BaseCont
         // return;
         // }
 
-        if (username.isEmpty() || password.isEmpty() || fullname.isEmpty() || gmail.isEmpty()
-                || confirmPassword.isEmpty()) {
-            showAlert(Alert.AlertType.ERROR, "Username, fullname, email and password cannot be empty.");
+        if (fullname.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Họ và tên không được để trống.");
+            return; // Dừng lại
+        }
+        if (username.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Tên đăng nhập không được để trống.");
+            return;
+        }
+        if (gmail.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Gmail không được để trống.");
+            return;
+        }
+        if (password.isEmpty()) {
+            showAlert(Alert.AlertType.ERROR, "Mật khẩu không được để trống.");
             return;
         }
         if (!gmail.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
@@ -83,17 +95,20 @@ public class RegisterController extends BaseController { // Kế thừa BaseCont
     protected void handleServerMessage(NetworkMessage message) {
         switch (message.getType()) {
             case REGISTER_SUCCESS:
-                showAlert(Alert.AlertType.INFORMATION, "Registration Successful!");
-                try {
-                    goToLogin(); // Chuyển đến login sau khi đăng ký thành công
-                    // Main.setRoot("chatapp/login");
-                } catch (Exception e) {
-                    e.printStackTrace();
-
-                }
+                Platform.runLater(() -> {
+                    showAlert(Alert.AlertType.INFORMATION, (String) message.getPayload());
+                    try {
+                        // goToLogin(); // Chuyển đến login sau khi đăng ký thành công
+                        Main.setRoot("chatapp/login");
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
                 break;
             case REGISTER_FAILURE:
-                showAlert(Alert.AlertType.ERROR, (String) message.getPayload()); // Hiển thị thông báo lỗi đăng ký
+                Platform.runLater(() -> {
+                    showAlert(Alert.AlertType.ERROR, (String) message.getPayload()); // Hiển thị thông báo lỗi đăng ký
+                });
                 break;
             default:
                 // Ignore other messages on this screen

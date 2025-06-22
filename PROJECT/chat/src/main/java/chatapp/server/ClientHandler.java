@@ -9,6 +9,8 @@ import java.sql.SQLException; // Tái sử dụng DBConfig
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
 import chatapp.model.Message;
 import chatapp.model.NetworkMessage;
 import chatapp.model.NetworkMessage.MessageType;
@@ -154,6 +156,16 @@ public class ClientHandler implements Runnable {
                     break;
                 case SEARCH_ROOM_REQUEST:
                     handleSearchRoomRequest((String) message.getPayload());
+                    break;
+                case GET_UNREAD_COUNTS_REQUEST:
+                    Map<Integer, Integer> unreadCounts = groupService.getUnreadCountsForUser(currentUser.getId());
+                    sendMessage(new NetworkMessage(NetworkMessage.MessageType.GET_UNREAD_COUNTS_RESPONSE, unreadCounts));
+                    break;
+
+                case MARK_MESSAGES_READ_REQUEST:
+                    int roomIdToMarkRead = (Integer) message.getPayload();
+                    groupService.markMessagesAsRead(currentUser.getId(), roomIdToMarkRead);
+                    sendMessage(new NetworkMessage(NetworkMessage.MessageType.MARK_MESSAGES_READ_RESPONSE, true));
                     break;
                 default:
                     // System.out.println("Received unknown message type: " + message.getType());
@@ -322,10 +334,30 @@ public class ClientHandler implements Runnable {
                         fileData);
 
                 if (newMessage != null) {
+                    List<User> members = groupService.getMembersGroupList(currentRoomId);
+                    List<Integer> userIds = members.stream()
+                            .map(User::getId)
+                            .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                            .collect(Collectors.toList());
+
+                    // Đánh dấu là chưa đọc cho các thành viên khác
+                    groupService.markMessagesAsUnread(currentRoomId, userIds);
                     NetworkMessage broadcastMsg = new NetworkMessage(
                             NetworkMessage.MessageType.RECEIVE_MESSAGE,
                             newMessage);
                     Server.broadcastMessage(currentRoomId, broadcastMsg, null);
+
+                    NetworkMessage notification = new NetworkMessage(
+                            NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
+                            currentRoomId
+                    );
+                    for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
+                        ClientHandler client = entry.getValue();
+                        if (client != this && client.getCurrentRoomId() != currentRoomId) {
+                            client.sendMessage(notification);
+                        }
+                    }
+
                 }
             }
         }
@@ -340,10 +372,30 @@ public class ClientHandler implements Runnable {
             );
 
             if (userMsg != null) {
+                // Lấy danh sách thành viên trong phòng
+                List<User> members = groupService.getMembersGroupList(currentRoomId);
+                List<Integer> userIds = members.stream()
+                        .map(User::getId)
+                        .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                        .collect(Collectors.toList());
+
+                // Đánh dấu là chưa đọc cho các thành viên khác
+                groupService.markMessagesAsUnread(currentRoomId, userIds);
+
                 Server.broadcastMessage(currentRoomId, new NetworkMessage(
                         NetworkMessage.MessageType.RECEIVE_MESSAGE,
                         userMsg
                 ), null);
+                NetworkMessage notification = new NetworkMessage(
+                        NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
+                        currentRoomId
+                );
+                for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
+                    ClientHandler client = entry.getValue();
+                    if (client != this && client.getCurrentRoomId() != currentRoomId) {
+                        client.sendMessage(notification);
+                    }
+                }
             }
 
             // Tạo thread riêng để gọi AI tránh block main thread
@@ -361,10 +413,28 @@ public class ClientHandler implements Runnable {
 
                         if (aiMsg != null) {
                             aiMsg.setFullname("Langflow AI");
+                            List<User> members = groupService.getMembersGroupList(currentRoomId);
+                            List<Integer> userIds = members.stream()
+                                    .map(User::getId)
+                                    .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                                    .collect(Collectors.toList());
+
+                            // Đánh dấu là chưa đọc cho các thành viên khác
+                            groupService.markMessagesAsUnread(currentRoomId, userIds);
                             Server.broadcastMessage(currentRoomId, new NetworkMessage(
                                     NetworkMessage.MessageType.RECEIVE_MESSAGE,
                                     aiMsg
                             ), null);
+                            NetworkMessage notification = new NetworkMessage(
+                                    NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
+                                    currentRoomId
+                            );
+                            for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
+                                ClientHandler client = entry.getValue();
+                                if (client != this && client.getCurrentRoomId() != currentRoomId) {
+                                    client.sendMessage(notification);
+                                }
+                            }
 
                         }
                     }
@@ -388,10 +458,32 @@ public class ClientHandler implements Runnable {
                     content);
 
             if (newMessage != null) {
+                // Lấy danh sách thành viên trong phòng
+                List<User> members = groupService.getMembersGroupList(currentRoomId);
+                List<Integer> userIds = members.stream()
+                        .map(User::getId)
+                        .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                        .collect(Collectors.toList());
+
+                // Đánh dấu là chưa đọc cho các thành viên khác
+                groupService.markMessagesAsUnread(currentRoomId, userIds);
+
                 NetworkMessage broadcastMsg = new NetworkMessage(
                         NetworkMessage.MessageType.RECEIVE_MESSAGE,
                         newMessage);
                 Server.broadcastMessage(currentRoomId, broadcastMsg, null);
+
+                NetworkMessage notification = new NetworkMessage(
+                        NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
+                        currentRoomId
+                );
+
+                for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
+                    ClientHandler client = entry.getValue();
+                    if (client != this && client.getCurrentRoomId() != currentRoomId) {
+                        client.sendMessage(notification);
+                    }
+                }
             }
         }
     }

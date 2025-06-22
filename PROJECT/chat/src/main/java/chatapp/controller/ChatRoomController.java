@@ -153,6 +153,8 @@ public class ChatRoomController extends BaseController {
     @FXML
     private TextField searchField;
 
+    private Map<Integer, Integer> unreadCounts = new HashMap<>();
+
     private List<Room> allGroups = new ArrayList<>();
     private User currentUser;
 
@@ -160,6 +162,8 @@ public class ChatRoomController extends BaseController {
     public void initialize() {
         requestJoinedGroups();
         requestCurrentUser();
+        requestUnreadCounts();
+
     }
     // === Các hàm quản lý popup (đã được cập nhật) ===
     @FXML
@@ -413,6 +417,7 @@ public class ChatRoomController extends BaseController {
             case USER_RESPONSE:
                 this.currentUser = (User) message.getPayload();
                 updateUserInfoUI();
+                requestUnreadCounts();
                 break;
             case JOIN_EXISTING_ROOM_RESPONSE:
                 if (message.getPayload() instanceof Room) {
@@ -438,12 +443,36 @@ public class ChatRoomController extends BaseController {
             case UPDATE_GMAIL_FAILURE:
                 showAlert(Alert.AlertType.ERROR, (String) message.getPayload());
                 break;
+            case GET_UNREAD_COUNTS_RESPONSE:
+                System.out.println("Received unread counts: " + message.getPayload());
+                unreadCounts = (Map<Integer, Integer>) message.getPayload();
+                showJoinedGroups(allGroups);
+                refreshRoomList();
+                break;
+            case NEW_MESSAGE_NOTIFICATION:
+                Integer roomIdWithNewMessage = (Integer) message.getPayload();
+                if (!unreadCounts.containsKey(roomIdWithNewMessage)) {
+                    unreadCounts.put(roomIdWithNewMessage, 1);
+                } else {
+                    unreadCounts.put(roomIdWithNewMessage, unreadCounts.get(roomIdWithNewMessage) + 1);
+                }
+                refreshRoomList();
+                break;
+            case MARK_MESSAGES_READ_RESPONSE:
+                Integer roomIdMarkedRead = (Integer) message.getPayload();
+                if (roomIdMarkedRead != null) {
+                    unreadCounts.remove(roomIdMarkedRead);
+                    refreshRoomList();
+                }
+                break;
             default:
                 // Bỏ qua các tin nhắn không liên quan đến màn hình này
                 // (ví dụ: RECEIVE_MESSAGE, LOGIN_SUCCESS...)
                 break;
         }
     }
+
+
 
     /**
      * Chuyển người dùng sang màn hình chat riêng tư của phòng.
@@ -459,6 +488,12 @@ public class ChatRoomController extends BaseController {
             PrivateRoomController privateRoomController = loader.getController();
             // Khởi tạo BaseController cho nó
             privateRoomController.initializeController();
+
+            NetworkMessage unreadRequest = new NetworkMessage(
+                    NetworkMessage.MessageType.GET_UNREAD_COUNTS_REQUEST,
+                    null
+            );
+            Client.getInstance().sendMessage(unreadRequest);
             // Truyền thông tin phòng sang cho nó
             privateRoomController.setRoom(room);
 
@@ -532,11 +567,33 @@ public class ChatRoomController extends BaseController {
             nameLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
             infoBox.getChildren().addAll(nameLabel);
-
             groupItem.getChildren().addAll(icon, infoBox);
+            if (unreadCounts.containsKey(room.getId()) && unreadCounts.get(room.getId()) > 0) {
+                StackPane indicator = createUnreadIndicator(unreadCounts.get(room.getId()));
+                indicator.setAlignment(Pos.CENTER_RIGHT);
+                // Canh chỉnh nếu cần, ví dụ: thêm spacing hoặc wrap lại bằng Region/HBox spacer
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                groupItem.getChildren().addAll(spacer, indicator);
+            }
+
             groupContainer.getChildren().add(groupItem);
         }
     }
+
+    private StackPane createUnreadIndicator(int count) {
+        Circle redDot = new Circle(8, Color.RED);
+        Label countLabel = new Label(String.valueOf(count));
+        countLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        StackPane indicator = new StackPane(redDot, countLabel);
+        indicator.setMinSize(16, 16);
+        indicator.setPrefSize(16, 16);
+        return indicator;
+    }
+
+
 
     private void requestJoinedGroups() {
         NetworkMessage request = new NetworkMessage(
@@ -551,4 +608,17 @@ public class ChatRoomController extends BaseController {
         Client.getInstance().sendMessage(new NetworkMessage(NetworkMessage.MessageType.GET_USER_REQUEST, null));
     }
 
+    private void requestUnreadCounts() {
+        if (currentUser != null) {
+            NetworkMessage request = new NetworkMessage(
+                    NetworkMessage.MessageType.GET_UNREAD_COUNTS_REQUEST,
+                    null);
+
+            Client.getInstance().sendMessage(request);
+        }
+    }
+
+    public void refreshRoomList() {
+        showJoinedGroups(allGroups); // Thêm tham số thứ 2
+    }
 }

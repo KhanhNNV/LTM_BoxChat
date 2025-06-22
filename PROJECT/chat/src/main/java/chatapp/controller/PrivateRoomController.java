@@ -18,6 +18,7 @@ import chatapp.model.*;
 import chatapp.model.NetworkMessage.MessageType;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.PauseTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
@@ -167,12 +168,16 @@ public class PrivateRoomController extends BaseController {
     @FXML private TextField searchField;
     private List<Message> allMessages = new ArrayList<>();
     private int currentSearchIndex = -1;
+    private Map<Integer, Integer> unreadCounts = new HashMap<>();
+
+
     @FXML private TextField searchRoomField;
 
     // Khởi tạo
     @FXML
     public void initialize() {
         requestJoinedGroups();
+        requestUnreadCounts();
         scrollToBottom();
         requestCurrentUser();
         overlay.setOnMouseClicked(e -> hideMenu(null));
@@ -627,6 +632,28 @@ public class PrivateRoomController extends BaseController {
                     allGroups = (List<Room>) message.getPayload();
                     showListGroups(allGroups, ""); // Thêm tham số thứ 2 là chuỗi rỗng
                     break;
+
+                case GET_UNREAD_COUNTS_RESPONSE:
+                    System.out.println("Received unread counts: " + message.getPayload());
+                    unreadCounts = (Map<Integer, Integer>) message.getPayload();
+                    showListGroups(allGroups, "");
+                    //refreshRoomList();
+                    break;
+
+                case NEW_MESSAGE_NOTIFICATION:
+                    Integer roomIdWithNewMessage = (Integer) message.getPayload();
+                    // Chỉ cập nhật unread count nếu:
+                    // 1. Đang không ở trong phòng này
+                    // 2. Hoặc phòng này không phải là phòng hiện tại
+                    if (currentRoom == null || currentRoom.getId() != roomIdWithNewMessage) {
+                        if (!unreadCounts.containsKey(roomIdWithNewMessage)) {
+                            unreadCounts.put(roomIdWithNewMessage, 1);
+                        } else {
+                            unreadCounts.put(roomIdWithNewMessage, unreadCounts.get(roomIdWithNewMessage) + 1);
+                        }
+                        refreshRoomList();
+                    }
+                    break;
                 default:
                     System.out.println("Received message of type: " + message.getType());
                     break;
@@ -635,100 +662,6 @@ public class PrivateRoomController extends BaseController {
     }
 
 
-
-//    public void showListGroups(List<Room> rooms) {
-//        listGroupContainer.getChildren().clear();
-//        // Giữ lại Pane "Danh Sách Nhóm" từ FXML
-//        listGroupContainer.getChildren().clear(); // xóa toàn bộ
-//
-//        // Thêm lại headerGroup từ @FXML
-//        listGroupContainer.getChildren().add(headerGroup); // Đảm bảo nó vẫn còn
-//
-//
-//        if (rooms.isEmpty()) {
-//            Label emptyLabel = new Label("Bạn chưa tham gia nhóm nào");
-//            emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: gray;");
-//            emptyLabel.setLayoutX(10);
-//            emptyLabel.setLayoutY(10);
-//            listGroupContainer.getChildren().add(emptyLabel);
-//            return;
-//        }
-//
-//        double layoutY = 62;
-//
-//        for (Room room : rooms) {
-//            // Pane đại diện cho nhóm
-//            Pane groupPane = new Pane();
-//            groupPane.setPrefSize(198, 62);
-//            groupPane.setLayoutY(layoutY);
-//            groupPane.setCursor(Cursor.HAND);
-//
-//            // Xóa tất cả style class trước khi thêm mới
-//            groupPane.getStyleClass().clear();
-//            groupPane.getStyleClass().add("vien-danh-sach-nhom");
-//
-//            // Thêm style class tùy theo trạng thái
-//            if (currentRoom != null && room.getId() == currentRoom.getId()) {
-//                groupPane.getStyleClass().add("active-room");
-//            } else {
-//                groupPane.getStyleClass().add("normal-room");
-//            }
-//
-//            // Thêm hiệu ứng hover
-//            groupPane.setOnMouseEntered(e -> {
-//                if (!(currentRoom != null && room.getId() == currentRoom.getId())) {
-//                    groupPane.setStyle("-fx-background-color: white;" );
-//                }
-//            });
-//
-//            groupPane.setOnMouseExited(e -> {
-//                // Luôn reset về màu đúng theo trạng thái active khi chuột rời đi
-//                if (currentRoom != null && room.getId() == currentRoom.getId()) {
-//                    groupPane.setStyle("-fx-background-color: #a6a6a6;");
-//                } else {
-//                    groupPane.setStyle("-fx-background-color: #d9d9d9;");
-//                }
-//            });
-//
-//
-//            // Thêm sự kiện click
-//            groupPane.setOnMouseClicked(e -> {
-//                // Gửi yêu cầu tham gia phòng đã tồn tại
-//                NetworkMessage request = new NetworkMessage(
-//                        NetworkMessage.MessageType.JOIN_EXISTING_ROOM_REQUEST,
-//                        room.getId()
-//                );
-//                Client.getInstance().sendMessage(request);
-//            });
-//
-//            // Label hiển thị tên nhóm
-//            Label nameLabel = new Label(room.getName());
-//            nameLabel.setLayoutX(8);
-//            nameLabel.setLayoutY(17);
-//            nameLabel.setPrefSize(158, 27);
-//            nameLabel.setFont(new Font(18));
-//            nameLabel.setCursor(Cursor.HAND);
-//
-//            groupPane.getChildren().add(nameLabel);
-//
-//            // Nếu muốn hiển thị trạng thái như "online"
-////            Circle statusDot = new Circle(180, 31, 4);
-////            statusDot.setFill(Color.DODGERBLUE);
-////            statusDot.setStroke(Color.BLACK);
-////
-////            groupPane.getChildren().add(statusDot);
-//
-//            // Thêm vào container
-//            listGroupContainer.getChildren().add(groupPane);
-//
-//            // Tăng layoutY cho nhóm tiếp theo
-//            layoutY += 62;
-//        }
-//
-//        // Cập nhật chiều cao động cho AnchorPane nếu cần
-//        listGroupContainer.setPrefHeight(layoutY);
-//
-//    }
 public void showListGroups(List<Room> rooms, String highlightKeyword) {
     listGroupContainer.getChildren().clear();
     // Thêm lại headerGroup từ @FXML
@@ -805,7 +738,13 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
             nameLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
         }
 
+
         groupPane.getChildren().add(nameLabel);
+
+        if (unreadCounts.containsKey(room.getId()) && unreadCounts.get(room.getId()) > 0) {
+            StackPane indicator = createUnreadIndicator(unreadCounts.get(room.getId()));
+            groupPane.getChildren().add(indicator);
+        }
 
         // Thêm vào container
         listGroupContainer.getChildren().add(groupPane);
@@ -817,6 +756,16 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     // Cập nhật chiều cao động cho AnchorPane nếu cần
     listGroupContainer.setPrefHeight(layoutY);
 }
+    private StackPane createUnreadIndicator(int count) {
+        Circle redDot = new Circle(8, Color.RED);
+        Label countLabel = new Label(String.valueOf(count));
+        countLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        StackPane indicator = new StackPane(redDot, countLabel);
+        indicator.setLayoutX(180);
+        indicator.setLayoutY(15);
+        return indicator;
+    }
 
     public void refreshRoomList() {
         showListGroups(allGroups, ""); // Thêm tham số thứ 2
@@ -825,6 +774,21 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     public void setRoom(Room room) {
         if (room != null) {
             this.currentRoom = room;
+
+            //Đã đọc tin nhắn
+            NetworkMessage markReadRequest = new NetworkMessage(
+                    NetworkMessage.MessageType.MARK_MESSAGES_READ_REQUEST,
+                    room.getId());
+            Client.getInstance().sendMessage(markReadRequest);
+            // Cập nhật local unreadCounts
+            unreadCounts.remove(room.getId());
+            refreshRoomList();
+
+            Platform.runLater(() -> {
+                PauseTransition pause = new PauseTransition(Duration.seconds(0.5));
+                pause.setOnFinished(e -> requestUnreadCounts());
+                pause.play();
+            });
             groupNameLabel.setText(room.getName());
 
             chatBox.getChildren().clear();
@@ -834,36 +798,6 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
 
     }
 
-    // public void setRoom(Room room) {
-    // // Dọn dẹp listener và resource của phòng hiện tại trước khi chuyển sang
-    // phòng mới
-    // cleanupCurrentRoom();
-    //
-    // this.currentRoom = room;
-    // if (room != null) {
-    // groupNameLabel.setText(room.getName());
-    // chatBox.getChildren().clear();
-    // requestRoomHistory(room.getId());
-    // requestGroupMembers(room.getId());
-    // initializeRoomListeners();
-    // }
-    // }
-    //
-    // private void cleanupCurrentRoom() {
-    // // Dọn dẹp các listener và resource của phòng hiện tại
-    // if (currentRoom != null) {
-    // // Thực hiện các thao tác dọn dẹp cần thiết
-    // chatBox.getChildren().clear();
-    // roomListenersInitialized = false;
-    // }
-    // }
-    //
-    // private void initializeRoomListeners() {
-    // if (!roomListenersInitialized) {
-    //
-    // roomListenersInitialized = true;
-    // }
-    // }
 
     private void requestJoinedGroups() {
         NetworkMessage request = new NetworkMessage(
@@ -1878,6 +1812,16 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
                 // Đặt HBox làm nội dung đồ họa cho cell
                 setGraphic(hbox);
             }
+        }
+    }
+
+    private void requestUnreadCounts() {
+        if (currentUser != null) {
+            NetworkMessage request = new NetworkMessage(
+                    NetworkMessage.MessageType.GET_UNREAD_COUNTS_REQUEST,
+                    null);
+
+            Client.getInstance().sendMessage(request);
         }
     }
 }

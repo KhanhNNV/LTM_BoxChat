@@ -80,7 +80,12 @@ public class NetworkMessage implements Serializable {
         UPDATE_ROOM_PASSWORD_REQUEST,
         SEARCH_ROOM_REQUEST,
         SEARCH_ROOM_RESPONSE,
-        UPDATE_FULLNAME_REQUEST
+        UPDATE_FULLNAME_REQUEST,
+        GET_UNREAD_COUNTS_REQUEST,      // Yêu cầu lấy số tin nhắn chưa đọc
+        GET_UNREAD_COUNTS_RESPONSE,    // Phản hồi với Map<groupId, unreadCount>
+        MARK_MESSAGES_READ_REQUEST,    // Yêu cầu đánh dấu đã đọc
+        MARK_MESSAGES_READ_RESPONSE,   // Xác nhận đã đánh dấu đọc
+        NEW_MESSAGE_NOTIFICATION       // Thông báo có tin nhắn mới
         /// them code sua thong tin
     }
 }

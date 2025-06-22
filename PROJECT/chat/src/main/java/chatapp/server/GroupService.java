@@ -3,10 +3,7 @@ package chatapp.server;
 
 import java.math.RoundingMode;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.TimeZone;
+import java.util.*;
 
 import chatapp.model.Message;
 import chatapp.model.Room;
@@ -532,4 +529,48 @@ public class GroupService {
         }
         return results;
     }
+
+    public void markMessagesAsUnread(int groupId, List<Integer> userIds) throws SQLException {
+        String sql = "INSERT INTO user_group_unread (user_id, group_id, unread_count) " +
+                "VALUES (?, ?, 1) " +
+                "ON DUPLICATE KEY UPDATE unread_count = unread_count + 1, last_updated = CURRENT_TIMESTAMP";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            for (int userId : userIds) {
+                // Kiểm tra xem user có đang online và ở trong phòng này không
+                ClientHandler client = Server.onlineUsers.get(userId);
+                if (client == null || client.getCurrentRoomId() != groupId) {
+                    stmt.setInt(1, userId);
+                    stmt.setInt(2, groupId);
+                    stmt.addBatch();
+                }
+            }
+            stmt.executeBatch();
+        }
+    }
+
+    public void markMessagesAsRead(int userId, int groupId) throws SQLException {
+        String sql = "DELETE FROM user_group_unread WHERE user_id = ? AND group_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            stmt.setInt(2, groupId);
+            stmt.executeUpdate();
+        }
+    }
+
+    public Map<Integer, Integer> getUnreadCountsForUser(int userId) throws SQLException {
+        Map<Integer, Integer> unreadCounts = new HashMap<>();
+        String sql = "SELECT group_id, unread_count FROM user_group_unread WHERE user_id = ?";
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                unreadCounts.put(rs.getInt("group_id"), rs.getInt("unread_count"));
+            }
+        }
+        return unreadCounts;
+    }
+
+
 }

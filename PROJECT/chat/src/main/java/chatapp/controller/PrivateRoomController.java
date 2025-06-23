@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -976,7 +977,8 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         Label nameLabel = new Label(msg.getFullname());
         nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
 
-        String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy"));
+        LocalDateTime sendAt = msg.getSendAt();
+        String formattedTime = (sendAt != null) ? sendAt.format(DateTimeFormatter.ofPattern("HH:mm: | dd-MM-yyyy")) : "";
         Label timeLabel = new Label(formattedTime);
         timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
 

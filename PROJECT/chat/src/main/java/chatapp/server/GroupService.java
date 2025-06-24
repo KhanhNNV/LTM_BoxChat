@@ -32,8 +32,6 @@ public class GroupService {
     }
 
     public Room createGroup(String name, String password, int leaderId) throws SQLException {
-        if (getGroupByName(name) != null)
-            return null; // Group đã tồn tại
 
         String sqlGroup = "INSERT INTO `Groups` (name, password, leader_id) VALUES (?, ?, ?)";
         String sqlUserGroup = "INSERT INTO User_Group (user_id, group_id) VALUES (?, ?)";

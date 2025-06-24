@@ -18,7 +18,6 @@ import chatapp.model.Room;
 import chatapp.model.User;
 import chatapp.service.AIService;
 
-
 public class ClientHandler implements Runnable {
     private final Socket clientSocket;
     private ObjectOutputStream out;
@@ -159,7 +158,8 @@ public class ClientHandler implements Runnable {
                     break;
                 case GET_UNREAD_COUNTS_REQUEST:
                     Map<Integer, Integer> unreadCounts = groupService.getUnreadCountsForUser(currentUser.getId());
-                    sendMessage(new NetworkMessage(NetworkMessage.MessageType.GET_UNREAD_COUNTS_RESPONSE, unreadCounts));
+                    sendMessage(
+                            new NetworkMessage(NetworkMessage.MessageType.GET_UNREAD_COUNTS_RESPONSE, unreadCounts));
                     break;
 
                 case MARK_MESSAGES_READ_REQUEST:
@@ -253,7 +253,7 @@ public class ClientHandler implements Runnable {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED, newRoom));
         } else {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "Tạo phòng thất bại. Tên phòng có thể đã tồn tại."));
+                    "Tạo phòng thất bại."));
         }
     }
 
@@ -349,8 +349,7 @@ public class ClientHandler implements Runnable {
 
                     NetworkMessage notification = new NetworkMessage(
                             NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
-                            currentRoomId
-                    );
+                            currentRoomId);
                     for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
                         ClientHandler client = entry.getValue();
                         if (client != this && client.getCurrentRoomId() != currentRoomId) {
@@ -360,16 +359,14 @@ public class ClientHandler implements Runnable {
 
                 }
             }
-        }
-        else if (content.startsWith("@ai ")) {
+        } else if (content.startsWith("@ai ")) {
             String question = content.substring(4).trim();
 
             // Lưu câu hỏi của người dùng
             Message userMsg = groupService.saveMessage(
                     currentUser.getId(),
                     currentRoomId,
-                    content
-            );
+                    content);
 
             if (userMsg != null) {
                 // Lấy danh sách thành viên trong phòng
@@ -384,12 +381,10 @@ public class ClientHandler implements Runnable {
 
                 Server.broadcastMessage(currentRoomId, new NetworkMessage(
                         NetworkMessage.MessageType.RECEIVE_MESSAGE,
-                        userMsg
-                ), null);
+                        userMsg), null);
                 NetworkMessage notification = new NetworkMessage(
                         NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
-                        currentRoomId
-                );
+                        currentRoomId);
                 for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
                     ClientHandler client = entry.getValue();
                     if (client != this && client.getCurrentRoomId() != currentRoomId) {
@@ -408,8 +403,7 @@ public class ClientHandler implements Runnable {
                         Message aiMsg = groupService.saveMessage(
                                 -1,
                                 currentRoomId,
-                                aiAnswer
-                        );
+                                aiAnswer);
 
                         if (aiMsg != null) {
                             aiMsg.setFullname("Langflow AI");
@@ -423,12 +417,10 @@ public class ClientHandler implements Runnable {
                             groupService.markMessagesAsUnread(currentRoomId, userIds);
                             Server.broadcastMessage(currentRoomId, new NetworkMessage(
                                     NetworkMessage.MessageType.RECEIVE_MESSAGE,
-                                    aiMsg
-                            ), null);
+                                    aiMsg), null);
                             NetworkMessage notification = new NetworkMessage(
                                     NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
-                                    currentRoomId
-                            );
+                                    currentRoomId);
                             for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
                                 ClientHandler client = entry.getValue();
                                 if (client != this && client.getCurrentRoomId() != currentRoomId) {
@@ -445,8 +437,7 @@ public class ClientHandler implements Runnable {
                             "Lỗi khi gọi AI: " + e.getMessage());
                     Server.broadcastMessage(currentRoomId, new NetworkMessage(
                             NetworkMessage.MessageType.RECEIVE_MESSAGE,
-                            errorMsg
-                    ), null);
+                            errorMsg), null);
                 }
             }).start();
         }
@@ -475,8 +466,7 @@ public class ClientHandler implements Runnable {
 
                 NetworkMessage notification = new NetworkMessage(
                         NetworkMessage.MessageType.NEW_MESSAGE_NOTIFICATION,
-                        currentRoomId
-                );
+                        currentRoomId);
 
                 for (Map.Entry<Integer, ClientHandler> entry : Server.onlineUsers.entrySet()) {
                     ClientHandler client = entry.getValue();
@@ -578,8 +568,7 @@ public class ClientHandler implements Runnable {
         if (currentRoomId == roomId) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You are already in this room."
-            ));
+                    "You are already in this room."));
             return;
         }
 
@@ -743,8 +732,7 @@ public class ClientHandler implements Runnable {
             if (currentUser == null || currentUser.getId() != userId) {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
-                        "Không có quyền thay đổi mật khẩu"
-                ));
+                        "Không có quyền thay đổi mật khẩu"));
                 return;
             }
 
@@ -753,26 +741,23 @@ public class ClientHandler implements Runnable {
                 currentUser.setPassword(newPassword);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.CHANGE_PASSWORD_SUCCESS,
-                        "Đổi mật khẩu thành công"
-                ));
+                        "Đổi mật khẩu thành công"));
             } else {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
-                        "Đổi mật khẩu thất bại"
-                ));
+                        "Đổi mật khẩu thất bại"));
             }
         } catch (SQLException e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
-                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
-            ));
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()));
         } catch (Exception e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.CHANGE_PASSWORD_FAILURE,
-                    "Lỗi hệ thống: " + e.getMessage()
-            ));
+                    "Lỗi hệ thống: " + e.getMessage()));
         }
     }
+
     private void handleUpdateFullName(Map<String, Object> payload) {
         try {
             int userId = (int) payload.get("userId");
@@ -781,8 +766,7 @@ public class ClientHandler implements Runnable {
             if (currentUser == null || currentUser.getId() != userId) {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
-                        "Không có quyền thay đổi tên hiển thị"
-                ));
+                        "Không có quyền thay đổi tên hiển thị"));
                 return;
             }
 
@@ -791,23 +775,20 @@ public class ClientHandler implements Runnable {
                 currentUser.setFullName(newFullName);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_FULLNAME_SUCCESS,
-                        "Đổi tên hiển thị thành công"
-                ));
+                        "Đổi tên hiển thị thành công"));
             } else {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
-                        "Đổi tên hiển thị thất bại"
-                ));
+                        "Đổi tên hiển thị thất bại"));
             }
         } catch (SQLException e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.UPDATE_FULLNAME_FAILURE,
-                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
-            ));
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()));
         }
 
-
     }
+
     // sua Gmail
     private void handleUpdateGmail(Map<String, Object> payload) {
         try {
@@ -817,8 +798,7 @@ public class ClientHandler implements Runnable {
             if (currentUser == null || currentUser.getId() != userId) {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
-                        "Không có quyền thay đổi Gmail"
-                ));
+                        "Không có quyền thay đổi Gmail"));
                 return;
             }
 
@@ -827,21 +807,19 @@ public class ClientHandler implements Runnable {
                 currentUser.setGmail(newGmail);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_GMAIL_SUCCESS,
-                        "Đổi Gmail thành công"
-                ));
+                        "Đổi Gmail thành công"));
             } else {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
-                        "Đổi Gmail thất bại (có thể Gmail đã tồn tại)"
-                ));
+                        "Đổi Gmail thất bại (có thể Gmail đã tồn tại)"));
             }
         } catch (SQLException e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.UPDATE_GMAIL_FAILURE,
-                    "Lỗi cơ sở dữ liệu: " + e.getMessage()
-            ));
+                    "Lỗi cơ sở dữ liệu: " + e.getMessage()));
         }
     }
+
     // sua ten phong
     private void handleUpdateRoomName(Map<String, Object> payload) {
         try {
@@ -853,22 +831,20 @@ public class ClientHandler implements Runnable {
                 Room updatedRoom = groupService.getGroupById(roomId); // Lấy thông tin phòng đã cập nhật
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
-                        updatedRoom
-                ));
+                        updatedRoom));
 
                 // Broadcast cho tất cả thành viên trong phòng
                 Server.broadcastMessage(roomId,
                         new NetworkMessage(
                                 NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
-                                updatedRoom
-                        ),
-                        this
-                );
+                                updatedRoom),
+                        this);
             }
         } catch (SQLException e) {
             // Xử lý lỗi...
         }
     }
+
     // sua pass phong
     private void handleUpdateRoomPassword(Map<String, Object> payload) {
         try {
@@ -882,43 +858,37 @@ public class ClientHandler implements Runnable {
                 Room updatedRoom = groupService.getGroupById(roomId);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
-                        updatedRoom
-                ));
+                        updatedRoom));
 
                 // Thông báo cho các thành viên khác (nếu cần)
                 NetworkMessage broadcastMsg = new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
-                        updatedRoom
-                );
+                        updatedRoom);
                 Server.broadcastMessage(roomId, broadcastMsg, this);
             } else {
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
-                        "Cập nhật mật khẩu thất bại"
-                ));
+                        "Cập nhật mật khẩu thất bại"));
             }
         } catch (SQLException e) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_FAILURE,
-                    "Lỗi database: " + e.getMessage()
-            ));
+                    "Lỗi database: " + e.getMessage()));
         }
     }
+
     private void handleSearchRoomRequest(String keyword) throws SQLException {
         if (currentUser == null) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
-                    "You must be logged in to search rooms."
-            ));
+                    "You must be logged in to search rooms."));
             return;
         }
 
         List<Room> searchResults = groupService.searchRooms(keyword, currentUser.getId());
         sendMessage(new NetworkMessage(
                 NetworkMessage.MessageType.SEARCH_ROOM_RESPONSE,
-                searchResults
-        ));
+                searchResults));
     }
 
 }
-

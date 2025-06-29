@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.Cursor?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<!-- 1. Xóa các thuộc tính kích thước cố định trên BorderPane để cửa sổ có thể co giãn -->
+<BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="chatapp.controller.PrivateRoomController">
+    <left>
+        <!-- 2. Giữ nguyên chiều rộng cố định cho thanh điều hướng bên trái -->
+        <StackPane prefWidth="198.0" BorderPane.alignment="CENTER">
+            <children>
+                <VBox styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css">
+                    <children>
+                        <!-- 3. Cho phép vùng chứa danh sách nhóm giãn nở theo chiều dọc -->
+                        <VBox VBox.vgrow="ALWAYS">
+                            <children>
+                                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css" VBox.vgrow="ALWAYS">
+                                    <content>
+                                        <AnchorPane fx:id="listGroupContainer" styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css">
+                                            <children>
+                                                <Pane fx:id="headerGroup" prefHeight="62.0" prefWidth="198.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
+                                                    <HBox alignment="CENTER_LEFT" layoutX="8.0" layoutY="8.0" prefHeight="46.0" prefWidth="182.0" spacing="10.0">
+                                                        <children>
+                                                            <ImageView fx:id="userAvatarImageView" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
+                                                                <image>
+                                                                    <Image url="@../image/icon_avatar.png"/>
+                                                                </image>
+                                                            </ImageView>
+                                                            <Label fx:id="usernameLabelInHeader" text="Username">
+                                                                <font>
+                                                                    <Font name="System Bold" size="16.0"/>
+                                                                </font>
+                                                            </Label>
+                                                        </children>
+                                                    </HBox>
+                                                </Pane>
+                                            </children>
+                                        </AnchorPane>
+                                    </content>
+                                </ScrollPane>
+                            </children>
+                        </VBox>
+                        <Pane fx:id="searchPopup2" prefHeight="68.0" prefWidth="198.0" visible="false">
+                            <children>
+                                <HBox fx:id="searchPopup1" prefHeight="45.0" prefWidth="191.0">
+                                    <children>
+                                        <StackPane prefHeight="46.0" prefWidth="233.0">
+                                            <children>
+                                                <Region style="-fx-background-color: #e4e4e4; -fx-background-radius: 5; -fx-border-color: BLACK; -fx-border-radius: 5;"/>
+                                                <TextField fx:id="searchRoomField" onAction="#handleSearchRoom" prefHeight="26.0" promptText="Tìm phòng..." style="-fx-background-color: transparent;" StackPane.alignment="CENTER_LEFT">
+                                                    <StackPane.margin>
+                                                        <Insets bottom="5.0" left="15.0" right="35.0" top="5.0" />
+                                                    </StackPane.margin>
+                                                </TextField>
+                                                <Button onAction="#handleSearchRoom" style="-fx-background-color: transparent;" StackPane.alignment="CENTER_RIGHT">
+                                                    <StackPane.margin>
+                                                        <Insets right="13.0" />
+                                                    </StackPane.margin>
+                                                    <graphic>
+                                                        <ImageView fitHeight="17.0" fitWidth="17.0" pickOnBounds="true" preserveRatio="true">
+                                                            <image>
+                                                                <Image url="@../image/icon_Kinhlup2.png" />
+                                                            </image>
+                                                        </ImageView>
+                                                    </graphic>
+                                                </Button>
+                                            </children>
+                                        </StackPane>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </Pane>
+                        <!-- Khung setting bottom -->
+                        <Pane prefHeight="89.0" prefWidth="198.0" styleClass="vien-khung-icon-duoi" stylesheets="@../css/style.css">
+                            <children>
+                                <HBox alignment="CENTER" prefHeight="66.0" prefWidth="200.0">
+                                    <children>
+                                        <StackPane onMouseClicked="#handleHomeClick" prefHeight="49.0" prefWidth="49.0">
+                                            <children>
+                                                <Circle fill="#c4c4c4" radius="16.0" stroke="BLACK" strokeType="INSIDE" />
+                                                <ImageView fitHeight="23.0" fitWidth="18.0" pickOnBounds="true" preserveRatio="true">
+                                                    <image>
+                                                        <Image url="@../image/icon_home.png" />
+                                                    </image>
+                                                    <cursor>
+                                                        <Cursor fx:constant="HAND" />
+                                                    </cursor>
+                                                </ImageView>
+                                            </children>
+                                        </StackPane>
+                                        <StackPane onMouseClicked="#showSearchBox2" prefHeight="49.0" prefWidth="49.0">
+                                            <children>
+                                                <Circle fill="#c4c4c4" radius="16.0" stroke="BLACK" strokeType="INSIDE" />
+                                                <ImageView fitHeight="25.0" fitWidth="15.0" pickOnBounds="true" preserveRatio="true">
+                                                    <image>
+                                                        <Image url="@../image/icon_Kinhlup2.png" />
+                                                    </image>
+                                                    <cursor>
+                                                        <Cursor fx:constant="HAND" />
+                                                    </cursor>
+                                                </ImageView>
+                                            </children>
+                                        </StackPane>
+                                        <StackPane onMouseClicked="#showBoxInfo" prefHeight="49.0" prefWidth="49.0">
+                                            <children>
+                                                <Circle fill="#c4c4c4" radius="16.0" stroke="BLACK" strokeType="INSIDE" />
+                                                <ImageView fitHeight="17.0" fitWidth="18.0" pickOnBounds="true" preserveRatio="true">
+                                                    <image>
+                                                        <Image url="@../image/icon_caidat.png" />
+                                                    </image>
+                                                    <cursor>
+                                                        <Cursor fx:constant="HAND" />
+                                                    </cursor>
+                                                </ImageView>
+                                            </children>
+                                        </StackPane>
+                                        <StackPane onMouseClicked="#exit" prefHeight="49.0" prefWidth="49.0">
+                                            <children>
+                                                <Circle fill="#c4c4c4" radius="16.0" stroke="BLACK" strokeType="INSIDE" />
+                                                <ImageView fitHeight="20.0" fitWidth="21.0" pickOnBounds="true" preserveRatio="true">
+                                                    <image>
+                                                        <Image url="@../image/icon_thoat.png" />
+                                                    </image>
+                                                    <cursor>
+                                                        <Cursor fx:constant="HAND" />
+                                                    </cursor>
+                                                </ImageView>
+                                            </children>
+                                        </StackPane>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </Pane>
+                    </children>
+                </VBox>
+                <Pane fx:id="overlay2" styleClass="overlay2" stylesheets="@../css/style.css" visible="false" />
+            </children>
+        </StackPane>
+    </left>
+
+
+    <center>
+        <StackPane fx:id="mainStackPane">
+            <children>
+                <!-- Khung box chat -->
+                <VBox>
+                    <children>
+                        <!-- header box chat -->
+                        <HBox fx:id="headerChat" alignment="CENTER_LEFT" prefHeight="75.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
+                            <padding>
+                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                            </padding>
+                            <children>
+                                <Label fx:id="groupNameLabel" text="[Tên nhóm]">
+                                    <font>
+                                        <Font name="System Bold Italic" size="19.0" />
+                                    </font>
+                                    <HBox.margin>
+                                        <Insets left="5.0" />
+                                    </HBox.margin>
+                                </Label>
+                                <!-- 4. Thêm một Region "giãn nở" để đẩy các icon sang phải -->
+                                <Region HBox.hgrow="ALWAYS" />
+                                <HBox fx:id="searchPopup" visible="false">
+                                    <children>
+                                        <StackPane prefHeight="46.0" prefWidth="233.0">
+                                            <children>
+                                                <Region style="-fx-background-color: #e4e4e4; -fx-background-radius: 5; -fx-border-color: BLACK; -fx-border-radius: 5;" />
+                                                <TextField fx:id="searchField" onAction="#handleSearch" promptText="Tìm kiếm tin nhắn..." style="-fx-background-color: transparent;" StackPane.alignment="CENTER_LEFT">
+                                                    <StackPane.margin>
+                                                        <Insets bottom="5.0" left="15.0" right="35.0" top="5.0" />
+                                                    </StackPane.margin>
+                                                </TextField>
+                                                <Button onAction="#handleSearch" style="-fx-background-color: transparent;" StackPane.alignment="CENTER_RIGHT">
+                                                    <StackPane.margin>
+                                                        <Insets right="13.0" />
+                                                    </StackPane.margin>
+                                                    <graphic>
+                                                        <ImageView fitHeight="17.0" fitWidth="17.0" pickOnBounds="true" preserveRatio="true">
+                                                            <image>
+                                                                <Image url="@../image/icon_Kinhlup2.png" />
+                                                            </image>
+                                                        </ImageView>
+                                                    </graphic>
+                                                </Button>
+                                            </children>
+                                        </StackPane>
+                                    </children>
+                                </HBox>
+                                <StackPane onMouseClicked="#showSearchBox" prefHeight="48.0" prefWidth="54.0">
+                                    <children>
+                                        <Circle fill="#c4c4c4" radius="23.0" stroke="BLACK" strokeType="INSIDE" />
+                                        <ImageView fitHeight="25.0" fitWidth="28.0" pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@../image/icon_Kinhlup2.png" />
+                                            </image>
+                                        </ImageView>
+                                    </children>
+                                    <cursor>
+                                        <Cursor fx:constant="HAND" />
+                                    </cursor>
+                                </StackPane>
+                                <StackPane onMouseClicked="#showMenu" prefHeight="48.0" prefWidth="54.0">
+                                    <children>
+                                        <Circle fill="#c4c4c4" radius="23.0" stroke="BLACK" strokeType="INSIDE" />
+                                        <ImageView fitHeight="31.0" fitWidth="31.0" pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@../image/icon_menu.png" />
+                                            </image>
+                                        </ImageView>
+                                    </children>
+                                    <cursor>
+                                        <Cursor fx:constant="HAND" />
+                                    </cursor>
+                                </StackPane>
+                            </children>
+                        </HBox>
+                        <!-- 5. Cho phép Box chat giãn nở theo chiều dọc -->
+                        <HBox styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css" VBox.vgrow="ALWAYS">
+                            <children>
+                                <!-- 6. Cho ScrollPane giãn nở theo cả 2 chiều để lấp đầy HBox cha -->
+                                <ScrollPane fx:id="scrollPane" fitToWidth="true" hbarPolicy="NEVER" style="-fx-background: #ffffff; -fx-border-color: #e0e0e0;" vbarPolicy="AS_NEEDED" HBox.hgrow="ALWAYS">
+                                    <content>
+                                        <VBox fx:id="chatBox" spacing="10" style="-fx-padding: 5px;" />
+                                    </content>
+                                </ScrollPane>
+                            </children>
+                        </HBox>
+                        <!-- Khung nhập tin nhắn -->
+                        <HBox alignment="CENTER_LEFT" prefHeight="67.0" spacing="10.0">
+                            <padding>
+                                <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+                            </padding>
+                            <children>
+                                <VBox>
+                                    <HBox spacing="15.0">
+                                        <children>
+                                            <ImageView fx:id="iconSendEmoji" fitHeight="15.0" fitWidth="15.0" onMouseClicked="#showEmojiPane" pickOnBounds="true" preserveRatio="true">
+                                                <image>
+                                                    <Image url="@../image/icon_icon.png" />
+                                                </image>
+                                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                                            </ImageView>
+                                            <ImageView fitHeight="15.0" fitWidth="15.0" pickOnBounds="true" preserveRatio="true">
+                                                <image>
+                                                    <Image url="@../image/icon_sticker.png" />
+                                                </image>
+                                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                                            </ImageView>
+                                            <ImageView fx:id="iconSendFile" fitHeight="15.0" fitWidth="18.0" onMouseClicked="#handleSendFile" pickOnBounds="true" preserveRatio="true">
+                                                <image>
+                                                    <Image url="@../image/icon_file.png" />
+                                                </image>
+                                                <cursor><Cursor fx:constant="HAND" /></cursor>
+                                            </ImageView>
+                                        </children>
+                                        <VBox.margin><Insets bottom="5.0"/></VBox.margin>
+                                    </HBox>
+                                    <!-- 7. Cho phép TextArea giãn nở theo chiều ngang -->
+                                    <TextArea fx:id="inputTextArea" prefHeight="38.0" prefWidth="480.0" promptText="Nhập tin nhắn..." HBox.hgrow="ALWAYS" />
+                                </VBox>
+                                <Button fx:id="sendButton" mnemonicParsing="false" onAction="#handleSendMessage" prefHeight="25.0" styleClass="text-send" stylesheets="@../css/style.css" text="Gửi">
+                                    <font>
+                                        <Font name="System Bold" size="14.0" />
+                                    </font>
+                                    <cursor>
+                                        <Cursor fx:constant="HAND" />
+                                    </cursor>
+                                </Button>
+                            </children>
+                        </HBox>
+                    </children>
+                </VBox>
+                <Pane fx:id="overlay" styleClass="overlay" visible="false" />
+                <Pane fx:id="boxInfo" visible="false">
+                    <children>
+                        <VBox alignment="TOP_RIGHT" layoutX="84.0" layoutY="126.0" prefHeight="240.0" prefWidth="361.0" styleClass="khung-thong-tin-ca-nhan" stylesheets="@../css/style.css">
+                            <children>
+                                <Button mnemonicParsing="false" onMouseClicked="#hideBoxInfo" styleClass="btn_out" stylesheets="@../css/style.css" text="Đóng">
+                                    <font>
+                                        <Font name="System Bold" size="12.0" />
+                                    </font>
+                                </Button>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                    <VBox.margin><Insets bottom="5.0" left="5.0" right="5.0" top="10.0" /></VBox.margin>
+                                    <children>
+                                        <Label text="Tên hiển thị:  ">
+                                            <font>
+                                                <Font name="System Bold" size="15.0" />
+                                            </font>
+                                        </Label>
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Text fx:id="infoFullNameUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[FullName]" />
+                                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateFullName" pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@../image/icon_chinhsua.png" />
+                                            </image>
+                                            <cursor>
+                                                <Cursor fx:constant="HAND" />
+                                            </cursor>
+                                        </ImageView>
+                                    </children>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                    <VBox.margin><Insets bottom="5.0" left="5.0" right="5.0" top="5.0" /></VBox.margin>
+                                    <children>
+                                        <Label text="Tên đăng nhập:  ">
+                                            <font>
+                                                <Font name="System Bold" size="15.0" />
+                                            </font>
+                                        </Label>
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Text fx:id="infoUserNameUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[UserName]" />
+                                    </children>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                    <VBox.margin><Insets bottom="5.0" left="5.0" right="5.0" top="5.0" /></VBox.margin>
+                                    <children>
+                                        <Label text="Mật khẩu:  ">
+                                            <font><Font name="System Bold" size="15.0" /></font>
+                                        </Label>
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Button fx:id="changePasswordButton" mnemonicParsing="false" onAction="#handleChangePassword" styleClass="edit-button" text="Đổi mật khẩu">
+                                            <cursor><Cursor fx:constant="HAND"/></cursor>
+                                        </Button>
+                                    </children>
+                                </HBox>
+                                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                                    <VBox.margin><Insets bottom="5.0" left="5.0" right="5.0" top="5.0" /></VBox.margin>
+                                    <children>
+                                        <Label text="Gmail:  ">
+                                            <font>
+                                                <Font name="System Bold" size="15.0" />
+                                            </font>
+                                        </Label>
+                                        <Region HBox.hgrow="ALWAYS" />
+                                        <Text fx:id="infoGmailUser" strokeType="OUTSIDE" strokeWidth="0.0" text="[Gmail]" />
+                                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateGmail" pickOnBounds="true" preserveRatio="true">
+                                            <image>
+                                                <Image url="@../image/icon_chinhsua.png" />
+                                            </image>
+                                            <cursor>
+                                                <Cursor fx:constant="HAND" />
+                                            </cursor>
+                                        </ImageView>
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </Pane>
+                <Pane fx:id="emojiOverlay" visible="false" >
+                    <children>
+                        <ScrollPane fx:id="emojiPane" fitToWidth="true" hbarPolicy="NEVER" layoutX="14.0" layoutY="258.0" maxHeight="196.0" maxWidth="274.0" prefHeight="196.0" prefWidth="274.0">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="200.0" prefWidth="273.0" />
+                            </content>
+                        </ScrollPane>
+                    </children>
+                </Pane>
+            </children>
+        </StackPane>
+    </center>
+    <right>
+        <!-- Menu popup -->
+        <VBox fx:id="menuPopup" alignment="TOP_LEFT" managed="false" prefWidth="227.0" spacing="5.0" styleClass="menu-popup" visible="false" BorderPane.alignment="CENTER">
+            <padding><Insets bottom="10.0" left="10.0" right="10.0" top="10.0" /></padding>
+            <children>
+                <Button fx:id="leaveRoomButton" mnemonicParsing="false" onAction="#handleLeaveRoom" styleClass="btn_out" stylesheets="@../css/style.css" text="Rời nhóm">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Button>
+                <Label text="Thông tin nhóm">
+                    <font>
+                        <Font name="System Bold" size="15.0" />
+                    </font>
+                    <VBox.margin><Insets top="10.0" /></VBox.margin>
+                </Label>
+                <HBox alignment="CENTER_LEFT" spacing="5.0">
+                    <children>
+                        <Label text="Tên nhóm:" />
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Text fx:id="infoNameGroup" strokeType="OUTSIDE" strokeWidth="0.0" text="[tên nhóm]" />
+                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateRoomName" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../image/icon_chinhsua.png" />
+                            </image>
+                            <cursor>
+                                <Cursor fx:constant="HAND" />
+                            </cursor>
+                        </ImageView>
+                    </children>
+                </HBox>
+                <HBox alignment="CENTER_LEFT">
+                    <children>
+                        <Label text="ID:" />
+                        <Text fx:id="infoIdGroup" strokeType="OUTSIDE" strokeWidth="0.0" text="[ID]" />
+                    </children>
+                </HBox>
+                <HBox fx:id="passwordRow" alignment="CENTER_LEFT" managed="false" spacing="5.0" visible="false">
+                    <children>
+                        <Label text="Password: " />
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Text fx:id="infoPassGroup" strokeType="OUTSIDE" strokeWidth="0.0" text="[Pass]" />
+                        <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateRoomPassword" pickOnBounds="true" preserveRatio="true">
+                            <image>
+                                <Image url="@../image/icon_chinhsua.png" />
+                            </image>
+                            <cursor>
+                                <Cursor fx:constant="HAND" />
+                            </cursor>
+                        </ImageView>
+                    </children>
+                </HBox>
+                <Label text="Danh sách thành viên ">
+                    <font>
+                        <Font name="System Bold" size="15.0" />
+                    </font>
+                    <VBox.margin><Insets top="10.0" /></VBox.margin>
+                </Label>
+                <!-- 8. Cho phép ListView giãn nở để lấp đầy phần còn lại của menu -->
+                <ListView fx:id="memberListView" VBox.vgrow="ALWAYS" />
+            </children>
+        </VBox>
+    </right>
+</BorderPane>

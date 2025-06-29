@@ -1,0 +1,233 @@
+.vien-danh-sach-nhom {
+    -fx-border-color: transparent transparent rgb(191, 191, 191) transparent;
+    -fx-border-width: 2px 0 2px 0;
+}
+
+
+/* Room bình thường */
+.normal-room {
+    -fx-background-color: #d9d9d9;
+}
+
+/* Room đang active */
+.active-room {
+    -fx-background-color: #a6a6a6;
+}
+
+.background-danh-sach-nhom {
+    -fx-background-color: rgb(217, 217, 217)
+}
+
+.background-danh-sach-nhom-choose {
+    -fx-background-color: rgb(166, 166, 166)
+}
+
+.background-danh-sach-nhom .viewport{
+    -fx-background-color: rgb(217, 217, 217)
+}
+.vien-khung-icon-duoi {
+    -fx-border-color: rgb(191, 191, 191) transparent transparent transparent;
+    -fx-border-width: 2px 0 2px 0;
+}
+
+.radius-text-field{
+    -fx-background-radius:100px;
+}
+
+.text-send{
+    -fx-background-color: rgb(102, 255, 51);
+}
+
+.message-container {
+    -fx-padding: 5px;
+    -fx-background-radius: 10px;
+}
+
+.message-content {
+    -fx-background-color: #f0f0f0;
+    -fx-background-radius: 10px;
+    -fx-padding: 5px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 3, 0, 0, 1);
+}
+
+.sender-name {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+
+}
+
+.message-time {
+    -fx-text-fill: #666666;
+    -fx-font-size: 12px;
+
+}
+
+/* Lớp phủ mờ */
+.overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    -fx-pref-width: 579px;
+    -fx-pref-height: 530px;
+}
+
+.overlay2 {
+    -fx-background-color: rgba(0, 0, 0, 0.5);
+    -fx-pref-width: 198px;
+    -fx-pref-height: 530px;
+}
+
+/* Menu popup */
+.menu-popup {
+    -fx-background-color: white;
+    -fx-background-radius: 5;
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.25), 16, 0, 4, 4);
+    -fx-padding: 10px;
+    -fx-spacing: 5px;
+}
+
+.menu-item {
+    -fx-background-color: transparent;
+    -fx-text-fill: #333;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 15px;
+    -fx-alignment: CENTER_LEFT;
+    -fx-min-width: 150px;
+
+}
+
+.menu-item:hover {
+    -fx-background-color: #f0f0f0;
+    -fx-cursor: hand;
+}
+
+.btn_out{
+    -fx-background-color: #ff1a1a;
+}
+
+.btn_out:hover {
+    -fx-background-color: #b30000;
+    -fx-cursor: hand;
+}
+
+.khung-thong-tin-ca-nhan{
+    -fx-background-color: #ffffff;
+}
+
+.room-item {
+    -fx-background-color: #d9d9d9;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 5;
+}
+
+.room-item:hover {
+    -fx-background-color: #e6e6e6;
+}
+
+.room-item.active {
+    -fx-background-color: #cccccc;
+}
+
+.text-flow {
+    -fx-font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif;
+    -fx-font-size: 14px;
+
+}
+
+.emoji-overlay {
+    -fx-background-color: rgba(0, 0, 0, 0.01); /* Gần như trong suốt */
+    -fx-cursor: default;
+}
+
+.emojiPane {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);
+}
+
+/* Đảm bảo GridPane bên trong có nền trong suốt */
+.emojiPane .grid-pane {
+    -fx-background-color: transparent;
+}
+/*style css cho nút sửa*/
+.edit-button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 10px;
+    -fx-border-radius: 5px;
+}
+
+.edit-button:hover {
+    -fx-background-color: #45a049;
+}
+
+/* Highlight cho kết quả tìm kiếm */
+.highlighted-message {
+    -fx-background-color: #fff9c4; /* Màu nền vàng nhạt */
+    -fx-border-color: #ffc107;     /* Viền màu vàng đậm */
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-padding: 3px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.1), 5, 0, 0, 2);
+}
+
+/* Hiệu ứng khi hover vào kết quả tìm kiếm */
+.highlighted-message:hover {
+    -fx-background-color: #ffeb3b; /* Màu vàng sáng hơn khi hover */
+    -fx-border-color: #ffa000;     /* Viền đậm hơn */
+    -fx-border-width: 2px;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 8, 0, 0, 3);
+}
+
+/* Menu kết quả tìm kiếm - ĐÃ SỬA LẠI */
+.search-result-item {
+    -fx-padding: 8px 12px;
+    -fx-font-size: 13px;
+    -fx-background-color: #f8f8f8; /* Màu nền xám nhạt thay vì xanh */
+    -fx-text-fill: #333;          /* Màu chữ tối */
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.search-result-item:hover {
+    -fx-background-color: #4CAF50; /* Màu xanh lá khi hover */
+    -fx-text-fill: white;         /* Chữ trắng khi hover */
+    -fx-font-weight: bold;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 2);
+}
+
+/* Hiệu ứng chuyển động mượt mà */
+.search-result-item, .highlighted-message {
+    -fx-transition: all 0.2s ease;
+}
+
+/* Ô tìm kiếm - ĐÃ SỬA LẠI */
+.search-popup {
+    -fx-background-color: white; /* Đổi từ xanh sang trắng */
+    -fx-border-color: #4CAF50;   /* Viền xanh lá */
+    -fx-border-width: 2px;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 1);
+    -fx-padding: 5px;
+}
+
+.search-popup .text-field {
+    -fx-background-color: white;
+    -fx-border-color: green;
+    -fx-prompt-text-fill: red;
+    -fx-font-size: 14px;
+}
+
+/* Nút tìm kiếm trong popup */
+.search-popup .button {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.search-popup .button:hover {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 15px;
+}

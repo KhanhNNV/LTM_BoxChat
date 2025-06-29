@@ -1,0 +1,37 @@
+.root {
+    -fx-font-family: "Segoe UI", sans-serif;
+    -fx-background-color: linear-gradient(to bottom, #dbeafe, #93c5fd); /* xanh nhạt */
+}
+
+.label {
+    -fx-font-size: 20px;
+    -fx-text-fill: #1e3a8a; /* xanh navy */
+    -fx-font-weight: bold;
+    -fx-text-background-color: transparent; /* Gợi ý thêm */
+}
+
+.text-field, .password-field {
+    -fx-pref-width: 250px;
+    -fx-padding: 10px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
+    -fx-border-color: #93c5fd;
+    -fx-text-fill: black; /* Gợi ý thêm */
+    -fx-text-background-color: white; /* Gợi ý thêm */
+}
+
+.button {
+    -fx-background-color: #3b82f6; /* xanh dương */
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 8px;
+    -fx-padding: 10 20;
+}
+
+.button:hover {
+    -fx-background-color: #2563eb;
+}
+
+.hyperlink {
+    -fx-text-fill: #1e40af;
+}

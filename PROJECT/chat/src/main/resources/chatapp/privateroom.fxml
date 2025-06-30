@@ -14,16 +14,15 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
-<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.shape.Circle?>
-<?import javafx.scene.shape.Rectangle?>
 <?import javafx.scene.text.Font?>
 <?import javafx.scene.text.Text?>
 
 <!-- 1. Xóa các thuộc tính kích thước cố định trên BorderPane để cửa sổ có thể co giãn -->
+
 <BorderPane stylesheets="@../css/style.css" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="chatapp.controller.PrivateRoomController">
     <left>
         <!-- 2. Giữ nguyên chiều rộng cố định cho thanh điều hướng bên trái -->
@@ -38,17 +37,17 @@
                                     <content>
                                         <AnchorPane fx:id="listGroupContainer" styleClass="background-danh-sach-nhom" stylesheets="@../css/style.css">
                                             <children>
-                                                <Pane fx:id="headerGroup" prefHeight="62.0" prefWidth="198.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
-                                                    <HBox alignment="CENTER_LEFT" layoutX="8.0" layoutY="8.0" prefHeight="46.0" prefWidth="182.0" spacing="10.0">
+                                                <Pane fx:id="headerGroup" prefHeight="74.0" prefWidth="198.0" styleClass="vien-danh-sach-nhom" stylesheets="@../css/style.css">
+                                                    <HBox alignment="CENTER_LEFT" layoutX="8.0" layoutY="8.0" prefHeight="62.0" prefWidth="182.0" spacing="10.0">
                                                         <children>
                                                             <ImageView fx:id="userAvatarImageView" fitHeight="40.0" fitWidth="40.0" pickOnBounds="true" preserveRatio="true">
                                                                 <image>
-                                                                    <Image url="@../image/icon_avatar.png"/>
+                                                                    <Image url="@../image/icon_avatar.png" />
                                                                 </image>
                                                             </ImageView>
-                                                            <Label fx:id="usernameLabelInHeader" text="Username">
+                                                            <Label fx:id="usernameLabelInHeader" prefHeight="26.0" prefWidth="130.0" text="Username">
                                                                 <font>
-                                                                    <Font name="System Bold" size="16.0"/>
+                                                                    <Font name="System Bold" size="16.0" />
                                                                 </font>
                                                             </Label>
                                                         </children>
@@ -66,7 +65,7 @@
                                     <children>
                                         <StackPane prefHeight="46.0" prefWidth="233.0">
                                             <children>
-                                                <Region style="-fx-background-color: #e4e4e4; -fx-background-radius: 5; -fx-border-color: BLACK; -fx-border-radius: 5;"/>
+                                                <Region style="-fx-background-color: #e4e4e4; -fx-background-radius: 5; -fx-border-color: BLACK; -fx-border-radius: 5;" />
                                                 <TextField fx:id="searchRoomField" onAction="#handleSearchRoom" prefHeight="26.0" promptText="Tìm phòng..." style="-fx-background-color: transparent;" StackPane.alignment="CENTER_LEFT">
                                                     <StackPane.margin>
                                                         <Insets bottom="5.0" left="15.0" right="35.0" top="5.0" />
@@ -91,7 +90,7 @@
                             </children>
                         </Pane>
                         <!-- Khung setting bottom -->
-                        <Pane prefHeight="89.0" prefWidth="198.0" styleClass="vien-khung-icon-duoi" stylesheets="@../css/style.css">
+                        <Pane prefHeight="70.0" prefWidth="198.0" styleClass="vien-khung-icon-duoi" stylesheets="@../css/style.css">
                             <children>
                                 <HBox alignment="CENTER" prefHeight="66.0" prefWidth="200.0">
                                     <children>
@@ -274,7 +273,7 @@
                                                 <cursor><Cursor fx:constant="HAND" /></cursor>
                                             </ImageView>
                                         </children>
-                                        <VBox.margin><Insets bottom="5.0"/></VBox.margin>
+                                        <VBox.margin><Insets bottom="5.0" /></VBox.margin>
                                     </HBox>
                                     <!-- 7. Cho phép TextArea giãn nở theo chiều ngang -->
                                     <TextArea fx:id="inputTextArea" prefHeight="38.0" prefWidth="480.0" promptText="Nhập tin nhắn..." HBox.hgrow="ALWAYS" />
@@ -341,7 +340,7 @@
                                         </Label>
                                         <Region HBox.hgrow="ALWAYS" />
                                         <Button fx:id="changePasswordButton" mnemonicParsing="false" onAction="#handleChangePassword" styleClass="edit-button" text="Đổi mật khẩu">
-                                            <cursor><Cursor fx:constant="HAND"/></cursor>
+                                            <cursor><Cursor fx:constant="HAND" /></cursor>
                                         </Button>
                                     </children>
                                 </HBox>
@@ -369,7 +368,7 @@
                         </VBox>
                     </children>
                 </Pane>
-                <Pane fx:id="emojiOverlay" visible="false" >
+                <Pane fx:id="emojiOverlay" visible="false">
                     <children>
                         <ScrollPane fx:id="emojiPane" fitToWidth="true" hbarPolicy="NEVER" layoutX="14.0" layoutY="258.0" maxHeight="196.0" maxWidth="274.0" prefHeight="196.0" prefWidth="274.0">
                             <content>
@@ -400,7 +399,7 @@
                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                     <children>
                         <Label text="Tên nhóm:" />
-                        <Region HBox.hgrow="ALWAYS"/>
+                        <Region HBox.hgrow="ALWAYS" />
                         <Text fx:id="infoNameGroup" strokeType="OUTSIDE" strokeWidth="0.0" text="[tên nhóm]" />
                         <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateRoomName" pickOnBounds="true" preserveRatio="true">
                             <image>
@@ -421,7 +420,7 @@
                 <HBox fx:id="passwordRow" alignment="CENTER_LEFT" managed="false" spacing="5.0" visible="false">
                     <children>
                         <Label text="Password: " />
-                        <Region HBox.hgrow="ALWAYS"/>
+                        <Region HBox.hgrow="ALWAYS" />
                         <Text fx:id="infoPassGroup" strokeType="OUTSIDE" strokeWidth="0.0" text="[Pass]" />
                         <ImageView fitHeight="16.0" fitWidth="16.0" onMouseClicked="#handleUpdateRoomPassword" pickOnBounds="true" preserveRatio="true">
                             <image>

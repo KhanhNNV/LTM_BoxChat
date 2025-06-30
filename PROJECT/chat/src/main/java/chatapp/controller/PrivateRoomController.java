@@ -667,7 +667,7 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
     listGroupContainer.getChildren().add(headerGroup);
 
     if (rooms.isEmpty()) {
-        Label emptyLabel = new Label("Bạn chưa tham gia nhóm nào");
+        Label emptyLabel = new Label();//"Bạn chưa tham gia nhóm nào"
         emptyLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: gray;");
         emptyLabel.setLayoutX(10);
         emptyLabel.setLayoutY(10);

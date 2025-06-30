@@ -9,6 +9,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import java.net.URL; // Thêm import này ở đầu file
 
 public class Main extends Application {
 
@@ -18,11 +19,17 @@ public class Main extends Application {
     public void start(Stage stage) throws Exception {
         primaryStage = stage;
 
-        // --- BẮT ĐẦU THAY ĐỔI ---
-        // Đặt các thuộc tính hệ thống cho Truststore của client
-        System.setProperty("javax.net.ssl.trustStore", "clienttruststore.jks");
-        System.setProperty("javax.net.ssl.trustStorePassword", "secretpassword"); // Dùng mật khẩu bạn đã tạo
-        // --- KẾT THÚC THAY ĐỔI ---
+        // Nạp Truststore của client từ classpath (trong thư mục resources/security)
+        URL trustStoreUrl = Main.class.getResource("/security/clienttruststore.jks");
+        if (trustStoreUrl != null) {
+            System.setProperty("javax.net.ssl.trustStore", trustStoreUrl.getPath());
+            System.setProperty("javax.net.ssl.trustStorePassword", "secretpassword");
+            System.out.println("Client TrustStore loaded from: " + trustStoreUrl.getPath());
+        } else {
+            System.err.println("Could not find clienttruststore.jks in classpath! Make sure it is in 'src/main/resources/security'");
+            // Dừng ứng dụng nếu không tìm thấy truststore
+            return;
+        }
 
         // Kết nối tới Server khi ứng dụng khởi động
         try {

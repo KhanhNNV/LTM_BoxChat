@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.net.URL; // Thêm import này ở đầu file
 
 import chatapp.model.NetworkMessage;
 import chatapp.model.User;
@@ -25,11 +26,17 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
-        // --- BẮT ĐẦU THAY ĐỔI ---
-        // 1. Đặt các thuộc tính hệ thống để Java biết nơi tìm Keystore và mật khẩu của nó.
-        //    Đường dẫn tương đối này giả định các file .jks nằm ở thư mục gốc của dự án.
-        System.setProperty("javax.net.ssl.keyStore", "serverkeystore.jks");
-        System.setProperty("javax.net.ssl.keyStorePassword", "secretpassword"); // Dùng mật khẩu bạn đã tạo
+        // Nạp Keystore của server từ classpath (trong thư mục resources/security)
+        URL keyStoreUrl = Server.class.getResource("/security/serverkeystore.jks");
+        if (keyStoreUrl != null) {
+            System.setProperty("javax.net.ssl.keyStore", keyStoreUrl.getPath());
+            System.setProperty("javax.net.ssl.keyStorePassword", "secretpassword");
+            System.out.println("Server KeyStore loaded from: " + keyStoreUrl.getPath());
+        } else {
+            System.err.println("Could not find serverkeystore.jks in classpath! Make sure it is in 'src/main/resources/security'");
+            // Dừng server nếu không tìm thấy keystore
+            return;
+        }
 
         // 2. Lấy Factory để tạo SSLServerSocket
         SSLServerSocketFactory ssf = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();

@@ -183,7 +183,6 @@ public class PrivateRoomController extends BaseController {
         requestCurrentUser();
         overlay.setOnMouseClicked(e -> hideMenu(null));
 
-        // === BẮT ĐẦU CODE MỚI CHO TÍNH NĂNG GỬI BẰNG ENTER ===
         inputTextArea.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 // Ngăn chặn hành vi mặc định của phím Enter trong mọi trường hợp
@@ -208,7 +207,6 @@ public class PrivateRoomController extends BaseController {
                 resetSearchHighlight();
             }
         });
-
 
     }
     // xu ly tiem kiem
@@ -975,12 +973,12 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         // Dòng thông tin người gửi và thời gian
         HBox infoBox = new HBox(10);
         Label nameLabel = new Label(msg.getFullname());
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         LocalDateTime sendAt = msg.getSendAt();
-        String formattedTime = (sendAt != null) ? sendAt.format(DateTimeFormatter.ofPattern("HH:mm: | dd-MM-yyyy")) : "";
+        String formattedTime = (sendAt != null) ? sendAt.format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy")) : "";
         Label timeLabel = new Label(formattedTime);
-        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12px;");
 
         infoBox.getChildren().addAll(nameLabel, timeLabel);
 
@@ -991,13 +989,12 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         TextFlow messageFlow = new TextFlow(messageText);
         messageFlow.setMaxWidth(480);
         messageFlow.setPadding(new Insets(5));
-        messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
 
         // Nền đặc biệt nếu là AI
         if ("Langflow AI".equalsIgnoreCase(msg.getFullname())) {
-            messageFlow.setStyle("-fx-background-color: #e0f7fa; -fx-background-radius: 10; -fx-border-color: #00acc1; -fx-border-radius: 10;");
+            messageFlow.setStyle("-fx-background-color: #e0f7fa; -fx-background-radius: 10px; -fx-border-color: #00acc1; -fx-border-radius: 10px;");
         } else {
-            messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10;");
+            messageFlow.setStyle("-fx-background-color: #f0f0f0; -fx-background-radius: 10px;");
         }
 
         contentBox.getChildren().addAll(infoBox, messageFlow);
@@ -1024,11 +1021,11 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
         // Dòng thông tin người gửi và thời gian
         HBox infoBox = new HBox(10);
         Label nameLabel = new Label(msg.getFullname());
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14;");
+        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         String formattedTime = msg.getSendAt().format(DateTimeFormatter.ofPattern("HH:mm | dd-MM-yyyy"));
         Label timeLabel = new Label(formattedTime);
-        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12;");
+        timeLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12px;");
 
         infoBox.getChildren().addAll(nameLabel, timeLabel);
 

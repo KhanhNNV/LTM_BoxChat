@@ -1304,7 +1304,6 @@ public void showListGroups(List<Room> rooms, String highlightKeyword) {
 
     @FXML
     public void handleLeaveRoom() {
-        // Kiểm tra xem người dùng có thực sự ở trong phòng không
         if (currentRoom == null) {
             showAlert(Alert.AlertType.ERROR, "Lỗi: Không tìm thấy thông tin phòng hiện tại.");
             return;

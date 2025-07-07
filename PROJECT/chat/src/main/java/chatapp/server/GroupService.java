@@ -294,12 +294,21 @@ public class GroupService {
     }
 
     public boolean deleteGroup(int groupId) throws SQLException {
-        String sql = "DELETE FROM `Groups` WHERE id = ?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+        // 1. First delete all unread counters for this group
+        String deleteUnreadSQL = "DELETE FROM user_group_unread WHERE group_id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(deleteUnreadSQL)) {
+            stmt.setInt(1, groupId);
+            stmt.executeUpdate();
+        }
+
+        String deleteGroupSQL = "DELETE FROM `Groups` WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(deleteGroupSQL)) {
             stmt.setInt(1, groupId);
             return stmt.executeUpdate() > 0;
         }
     }
+
+
 
     public boolean removeUserFromGroup(int userId, int groupId) throws SQLException {
         String sql = "DELETE FROM User_Group WHERE user_id = ? AND group_id = ?";

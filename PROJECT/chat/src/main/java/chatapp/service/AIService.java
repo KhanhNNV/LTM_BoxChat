@@ -1,4 +1,3 @@
-
 package chatapp.service;
 
 import org.json.JSONArray;
@@ -25,7 +24,6 @@ public class AIService {
             con.setConnectTimeout(60000);
             con.setReadTimeout(120000);
 
-            // Tạo JSON payload đúng định dạng
             String jsonInput = String.format("{\"input_value\": \"%s\", \"input_type\": \"chat\", \"output_type\": \"chat\"}",
                     prompt.replace("\"", "\\\""));
 
@@ -35,7 +33,6 @@ public class AIService {
                 os.write(input, 0, input.length);
             }
 
-            // Kiểm tra response code
             int responseCode = con.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 System.err.println("Langflow API request failed with code: " + responseCode);
@@ -51,7 +48,7 @@ public class AIService {
                 }
                 System.out.println("Langflow raw response: " + response);
 
-                System.out.println("Langflow raw response: " + response); // Log response
+                System.out.println("Langflow raw response: " + response);
                 return extractAiTextFromJson(response.toString());
             }
         } catch (Exception e) {
@@ -71,7 +68,7 @@ public class AIService {
                 if (innerOutputs.length() > 0) {
                     JSONObject inside = innerOutputs.getJSONObject(0);
                     JSONObject artifacts = inside.getJSONObject("artifacts");
-                    return artifacts.getString("message"); // ✅ Trả về nội dung
+                    return artifacts.getString("message");
                 }
             }
             return "Không tìm thấy phản hồi từ AI.";

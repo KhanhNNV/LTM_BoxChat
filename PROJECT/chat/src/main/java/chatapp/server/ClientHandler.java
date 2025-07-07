@@ -1,11 +1,10 @@
-// TẠO FILE MỚI: src/main/java/chatapp/server/ClientHandler.java
 package chatapp.server;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.sql.SQLException; // Tái sử dụng DBConfig
+import java.sql.SQLException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,7 @@ public class ClientHandler implements Runnable {
         this.currentRoomId = roomId;
     }
 
-    // Bạn cũng nên có một getter để đọc giá trị này nếu cần
+
     public int getCurrentRoomId() {
         return this.currentRoomId;
     }
@@ -43,7 +42,7 @@ public class ClientHandler implements Runnable {
             this.groupService = new GroupService();
         } catch (SQLException e) {
             e.printStackTrace();
-            // Handle exception
+
         }
     }
 
@@ -72,7 +71,7 @@ public class ClientHandler implements Runnable {
                 userWithStatus.setOnline(false); // Đã offline
 
                 Server.broadcastUserStatusUpdate(userWithStatus, this);
-                Server.removeOnlineUser(currentUser.getId()); // THÊM DÒNG NÀY
+                Server.removeOnlineUser(currentUser.getId());
             }
             try {
                 clientSocket.close();
@@ -92,7 +91,6 @@ public class ClientHandler implements Runnable {
                     handleRegister((User) message.getPayload());
                     break;
                 case CREATE_ROOM_REQUEST:
-                    // handleCreateRoom((Room) message.getPayload());
                     handleCreateRoom((Room) message.getPayload());
                     break;
                 case JOIN_ROOM_REQUEST:
@@ -131,10 +129,8 @@ public class ClientHandler implements Runnable {
                     }
                     break;
                 case REMOVE_MEMBER_REQUEST:
-                    // Lấy payload là ID của người cần xóa
                     int memberIdToRemove = (Integer) message.getPayload();
 
-                    // GỌI PHƯƠNG THỨC XỬ LÝ
                     handleRemoveMember(memberIdToRemove);
                     break;
                 case CHANGE_PASSWORD_REQUEST:
@@ -168,16 +164,11 @@ public class ClientHandler implements Runnable {
                     sendMessage(new NetworkMessage(NetworkMessage.MessageType.MARK_MESSAGES_READ_RESPONSE, true));
                     break;
                 default:
-                    // System.out.println("Received unknown message type: " + message.getType());
-                    // // Có thể gửi thông báo lỗi về cho client
-                    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-                    // "Unknown message type received."));
                     break;
             }
         } catch (SQLException e) {
             System.err.println("Error handling message from client: " + clientSocket.getInetAddress());
-            e.printStackTrace(); // In ra lỗi để debug
-            // Có thể gửi thông báo lỗi về cho client
+            e.printStackTrace();
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
                     "An internal server error occurred."));
         }
@@ -187,9 +178,9 @@ public class ClientHandler implements Runnable {
         User loggedInUser = userService.login(user.getUsername(), user.getPassword());
         if (loggedInUser != null) {
             this.currentUser = loggedInUser;
-            Server.addOnlineUser(loggedInUser.getId(), this);// THÊM DÒNG NÀY
+            Server.addOnlineUser(loggedInUser.getId(), this);
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.LOGIN_SUCCESS, loggedInUser));
-            // THÔNG BÁO CHO CÁC CLIENT KHÁC
+
             User userWithStatus = new User();
             userWithStatus.setId(loggedInUser.getId());
             userWithStatus.setOnline(true); // Đã online
@@ -209,39 +200,12 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // private void handleCreateRoom(Room room) throws SQLException {
-    // // Chỉ user đã đăng nhập mới được tạo phòng
-    // if (currentUser == null) {
-    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-    // "You must be logged in to create a room."));
-    // return;
-    // }
-    // Room newRoom = groupService.createGroup(room.getName(), room.getPassword(),
-    // currentUser.getId());
-    // if (newRoom != null) {
-    // this.currentRoomId = newRoom.getId();
-    // Server.addUserToRoom(newRoom.getId(), this);
-    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_CREATED,
-    // newRoom));
-    // } else {
-    // sendMessage(new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE,
-    // "Room name already exists."));
-    // }
-    // }
-
     private void handleCreateRoom(Room roomToCreate) throws SQLException {
         if (currentUser == null) {
             sendMessage(
                     new NetworkMessage(NetworkMessage.MessageType.ERROR_RESPONSE, "Bạn phải đăng nhập để tạo phòng."));
             return;
         }
-
-        // Room newRoom = groupService.createGroupWithMembers(
-        // roomToCreate.getName(),
-        // roomToCreate.getPassword(),
-        // currentUser.getId(),
-        // roomToCreate.getMemberEmails() // Lấy danh sách email từ đối tượng Room
-        // );
         Room newRoom = groupService.createGroup(
                 roomToCreate.getName(),
                 roomToCreate.getPassword(),
@@ -264,7 +228,6 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // yeu cau nhap id phong > 0
         if (room.getId() <= 0) {
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_JOIN_FAILED,
                     "Yêu cầu tham gia không hợp lệ (thiếu ID phòng)."));
@@ -277,23 +240,19 @@ public class ClientHandler implements Runnable {
             Server.addUserToRoom(joinedRoom.getId(), this);
 
             sendMessage(new NetworkMessage(NetworkMessage.MessageType.ROOM_JOINED, joinedRoom));
-            // Thông báo cho những người khác trong phòng
             Message notification = new Message(0, "System", joinedRoom.getId(),
                     currentUser.getUsername() + " has joined the room.");
             Server.broadcastMessage(joinedRoom.getId(),
                     new NetworkMessage(NetworkMessage.MessageType.RECEIVE_MESSAGE, notification), this);
             try {
-                // Lấy danh sách member mới nhất từ DB (đã bao gồm người vừa join)
                 List<User> updatedMembers = groupService.getMembersGroupList(joinedRoom.getId());
 
-                // Cập nhật trạng thái online/offline cho danh sách này
                 for (User member : updatedMembers) {
                     if (Server.onlineUsers.containsKey(member.getId())) {
                         member.setOnline(true);
                     }
                 }
 
-                // Gói vào message
                 NetworkMessage memberListUpdateMsg = new NetworkMessage(
                         NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
                         updatedMembers);
@@ -314,7 +273,6 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Kiểm tra nếu là file (content bắt đầu bằng FILE_PREFIX)
         if (content.startsWith("FILE:")) {
             String[] parts = content.split(":", 5);
             if (parts.length == 5) {
@@ -323,7 +281,6 @@ public class ClientHandler implements Runnable {
                 int fileSize = Integer.parseInt(parts[3]);
                 String base64Data = parts[4];
 
-                // Chuyển base64 thành byte[]
                 byte[] fileData = Base64.getDecoder().decode(base64Data);
 
                 Message newMessage = groupService.saveFileMessage(
@@ -337,10 +294,9 @@ public class ClientHandler implements Runnable {
                     List<User> members = groupService.getMembersGroupList(currentRoomId);
                     List<Integer> userIds = members.stream()
                             .map(User::getId)
-                            .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                            .filter(id -> id != currentUser.getId())
                             .collect(Collectors.toList());
 
-                    // Đánh dấu là chưa đọc cho các thành viên khác
                     groupService.markMessagesAsUnread(currentRoomId, userIds);
                     NetworkMessage broadcastMsg = new NetworkMessage(
                             NetworkMessage.MessageType.RECEIVE_MESSAGE,
@@ -362,21 +318,18 @@ public class ClientHandler implements Runnable {
         } else if (content.startsWith("@ai ")) {
             String question = content.substring(4).trim();
 
-            // Lưu câu hỏi của người dùng
             Message userMsg = groupService.saveMessage(
                     currentUser.getId(),
                     currentRoomId,
                     content);
 
             if (userMsg != null) {
-                // Lấy danh sách thành viên trong phòng
                 List<User> members = groupService.getMembersGroupList(currentRoomId);
                 List<Integer> userIds = members.stream()
                         .map(User::getId)
-                        .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                        .filter(id -> id != currentUser.getId())
                         .collect(Collectors.toList());
 
-                // Đánh dấu là chưa đọc cho các thành viên khác
                 groupService.markMessagesAsUnread(currentRoomId, userIds);
 
                 Server.broadcastMessage(currentRoomId, new NetworkMessage(
@@ -393,7 +346,6 @@ public class ClientHandler implements Runnable {
                 }
             }
 
-            // Tạo thread riêng để gọi AI tránh block main thread
             new Thread(() -> {
                 try {
                     AIService aiService = new AIService();
@@ -410,10 +362,9 @@ public class ClientHandler implements Runnable {
                             List<User> members = groupService.getMembersGroupList(currentRoomId);
                             List<Integer> userIds = members.stream()
                                     .map(User::getId)
-                                    .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                                    .filter(id -> id != currentUser.getId())
                                     .collect(Collectors.toList());
 
-                            // Đánh dấu là chưa đọc cho các thành viên khác
                             groupService.markMessagesAsUnread(currentRoomId, userIds);
                             Server.broadcastMessage(currentRoomId, new NetworkMessage(
                                     NetworkMessage.MessageType.RECEIVE_MESSAGE,
@@ -432,7 +383,6 @@ public class ClientHandler implements Runnable {
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    // Gửi thông báo lỗi về client
                     Message errorMsg = new Message(-1, "System", currentRoomId,
                             "Lỗi khi gọi AI: " + e.getMessage());
                     Server.broadcastMessage(currentRoomId, new NetworkMessage(
@@ -441,7 +391,6 @@ public class ClientHandler implements Runnable {
                 }
             }).start();
         }
-        // Tin nhắn văn bản bình thường
         else {
             Message newMessage = groupService.saveMessage(
                     currentUser.getId(),
@@ -449,14 +398,12 @@ public class ClientHandler implements Runnable {
                     content);
 
             if (newMessage != null) {
-                // Lấy danh sách thành viên trong phòng
                 List<User> members = groupService.getMembersGroupList(currentRoomId);
                 List<Integer> userIds = members.stream()
                         .map(User::getId)
-                        .filter(id -> id != currentUser.getId()) // Không đánh dấu cho người gửi
+                        .filter(id -> id != currentUser.getId())
                         .collect(Collectors.toList());
 
-                // Đánh dấu là chưa đọc cho các thành viên khác
                 groupService.markMessagesAsUnread(currentRoomId, userIds);
 
                 NetworkMessage broadcastMsg = new NetworkMessage(
@@ -537,7 +484,6 @@ public class ClientHandler implements Runnable {
         }
         List<User> members = groupService.getMembersGroupList(groupId);
         for (User member : members) {
-            // Kiểm tra xem ID của thành viên có trong danh sách online của Server không
             if (Server.onlineUsers.containsKey(member.getId())) {
                 member.setOnline(true);
             } else {
@@ -557,14 +503,12 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Kiểm tra xem user đã ở trong phòng này chưa
         if (currentRoomId == roomId) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
                     "You are already in this room."));
             return;
         }
-        // Kiểm tra xem user đã ở trong phòng này chưa
         if (currentRoomId == roomId) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
@@ -572,7 +516,6 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Kiểm tra xem user có trong phòng không
         if (!groupService.isUserInRoom(currentUser.getId(), roomId)) {
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.ERROR_RESPONSE,
@@ -580,19 +523,16 @@ public class ClientHandler implements Runnable {
             return;
         }
 
-        // Rời phòng hiện tại nếu đang ở trong phòng
         if (currentRoomId != -1) {
             Server.removeUserFromRoom(currentRoomId, this);
 
         }
 
-        // Tham gia phòng mới
         Room room = groupService.getGroupById(roomId);
         if (room != null) {
             this.currentRoomId = roomId;
             Server.addUserToRoom(roomId, this);
 
-            // Gửi phản hồi thành công với thông tin phòng
             sendMessage(new NetworkMessage(
                     NetworkMessage.MessageType.JOIN_EXISTING_ROOM_RESPONSE,
                     room));
@@ -605,7 +545,6 @@ public class ClientHandler implements Runnable {
     }
 
     private void handleLeaveRoom() throws SQLException {
-        // Kiểm tra xem user có đang ở trong phòng nào không
         if (currentRoomId == -1) {
             sendMessage(new NetworkMessage(MessageType.ERROR_RESPONSE, "Bạn không ở trong phòng nào cả."));
             return;
@@ -613,51 +552,33 @@ public class ClientHandler implements Runnable {
 
         int roomToLeaveId = this.currentRoomId;
 
-        // Kiểm tra xem người dùng có phải là leader của phòng này không
         boolean isLeader = groupService.isUserLeaderOfGroup(currentUser.getId(), roomToLeaveId);
 
         if (isLeader) {
-            // --- LOGIC KHI LEADER RỜI ĐI ---
-
-            // 1. Xóa phòng khỏi database
             boolean deleted = groupService.deleteGroup(roomToLeaveId);
 
             if (deleted) {
-                // 2. Thông báo cho tất cả thành viên (bao gồm cả leader) rằng phòng đã bị giải
-                // tán
                 String notificationContent = "Trưởng phòng (" + currentUser.getUsername()
                         + ") đã rời đi. Phòng đã được giải tán.";
                 Message notificationMsg = new Message(0, "System", roomToLeaveId, notificationContent);
                 NetworkMessage broadcastMsg = new NetworkMessage(MessageType.ROOM_DELETED, notificationMsg);
 
-                // Broadcast cho tất cả client trong phòng trước khi xóa phòng khỏi Server
                 Server.broadcastMessage(roomToLeaveId, broadcastMsg, null);
 
-                // 3. Xóa phòng khỏi bộ nhớ của server
                 Server.removeAllUsersFromRoom(roomToLeaveId);
 
-                // Cập nhật trạng thái của ClientHandler này
                 this.currentRoomId = -1;
-
-                // Ghi chú: Không cần gửi thêm tin nhắn riêng cho leader,
-                // vì leader cũng nhận được tin nhắn broadcast ROOM_DELETED.
-
             } else {
-                // Có lỗi khi xóa phòng
                 sendMessage(new NetworkMessage(MessageType.ERROR_RESPONSE, "Lỗi: không thể xóa phòng."));
             }
 
         } else {
-            // --- LOGIC KHI THÀNH VIÊN THƯỜNG RỜI ĐI ---
 
-            // 1. Xóa user khỏi phòng trong Server và DB
-            Server.removeUserFromRoom(roomToLeaveId, this); // Xóa khỏi bộ nhớ server
-            groupService.removeUserFromGroup(currentUser.getId(), roomToLeaveId); // Xóa khỏi DB
+            Server.removeUserFromRoom(roomToLeaveId, this);
+            groupService.removeUserFromGroup(currentUser.getId(), roomToLeaveId);
 
-            // 2. Thông báo cho bản thân user đã rời phòng thành công
             sendMessage(new NetworkMessage(MessageType.USER_LEFT_ROOM, "Bạn đã rời khỏi phòng."));
 
-            // 3. Cập nhật danh sách thành viên trong phòng
             List<User> updatedMembers = groupService.getMembersGroupList(roomToLeaveId);
 
             for (User member : updatedMembers) {
@@ -670,17 +591,14 @@ public class ClientHandler implements Runnable {
                     NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
                     updatedMembers);
 
-            // Gửi danh sách mới cho TẤT CẢ mọi người đang online trong phòng
             Server.broadcastToAllInRoom(roomToLeaveId, memberListUpdateMsg);
 
-            // 4. Thông báo cho những người còn lại trong phòng
             String notificationContent = currentUser.getUsername() + " đã rời khỏi phòng.";
             Message notificationMsg = new Message(0, "System", roomToLeaveId, notificationContent);
             NetworkMessage broadcastMsg = new NetworkMessage(MessageType.RECEIVE_MESSAGE, notificationMsg);
 
-            Server.broadcastMessage(roomToLeaveId, broadcastMsg, this); // Gửi cho mọi người trừ người vừa rời
+            Server.broadcastMessage(roomToLeaveId, broadcastMsg, this);
 
-            // 5. Cập nhật trạng thái của ClientHandler
             this.currentRoomId = -1;
         }
     }
@@ -694,10 +612,8 @@ public class ClientHandler implements Runnable {
         boolean success = groupService.removeMemberFromGroup(memberIdToRemove, currentRoomId, currentUser.getId());
 
         if (success) {
-            // 1. Báo thành công cho leader
             sendMessage(new NetworkMessage(MessageType.MEMBER_REMOVED_SUCCESS, "Đã xóa thành viên."));
 
-            // 2. Gửi danh sách thành viên mới cho tất cả mọi người trong phòng
             List<User> updatedMembers = groupService.getMembersGroupList(currentRoomId);
 
             for (User member : updatedMembers) {
@@ -710,10 +626,7 @@ public class ClientHandler implements Runnable {
                     NetworkMessage.MessageType.MEMBERS_GROUP_RESPONSE,
                     updatedMembers);
 
-            // Gửi danh sách mới cho TẤT CẢ mọi người đang online trong phòng
             Server.broadcastToAllInRoom(currentRoomId, memberListUpdateMsg);
-
-            // 3. Tìm ClientHandler của người bị xóa và báo cho họ
             Server.notifyUserRemoved(memberIdToRemove, currentRoomId);
 
         } else {
@@ -722,7 +635,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    /// code sua thong tin
     private void handleChangePassword(Map<String, Object> payload) {
 
         try {
@@ -789,7 +701,6 @@ public class ClientHandler implements Runnable {
 
     }
 
-    // sua Gmail
     private void handleUpdateGmail(Map<String, Object> payload) {
         try {
             int userId = (int) payload.get("userId");
@@ -820,7 +731,6 @@ public class ClientHandler implements Runnable {
         }
     }
 
-    // sua ten phong
     private void handleUpdateRoomName(Map<String, Object> payload) {
         try {
             int roomId = (int) payload.get("roomId");
@@ -833,7 +743,6 @@ public class ClientHandler implements Runnable {
                         NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
                         updatedRoom));
 
-                // Broadcast cho tất cả thành viên trong phòng
                 Server.broadcastMessage(roomId,
                         new NetworkMessage(
                                 NetworkMessage.MessageType.UPDATE_ROOM_NAME_SUCCESS,
@@ -841,11 +750,9 @@ public class ClientHandler implements Runnable {
                         this);
             }
         } catch (SQLException e) {
-            // Xử lý lỗi...
         }
     }
 
-    // sua pass phong
     private void handleUpdateRoomPassword(Map<String, Object> payload) {
         try {
             int roomId = (int) payload.get("roomId");
@@ -854,13 +761,11 @@ public class ClientHandler implements Runnable {
 
             boolean success = groupService.updateRoomPassword(roomId, newPassword, leaderId);
             if (success) {
-                // Trả về Room đã cập nhật để client cập nhật UI
                 Room updatedRoom = groupService.getGroupById(roomId);
                 sendMessage(new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
                         updatedRoom));
 
-                // Thông báo cho các thành viên khác (nếu cần)
                 NetworkMessage broadcastMsg = new NetworkMessage(
                         NetworkMessage.MessageType.UPDATE_ROOM_PASSWORD_SUCCESS,
                         updatedRoom);

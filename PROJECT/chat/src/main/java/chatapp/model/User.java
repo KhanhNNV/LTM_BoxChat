@@ -2,16 +2,16 @@ package chatapp.model;
 
 import java.io.Serializable; // Thêm import
 
-public class User implements Serializable { // Implement Serializable
+public class User implements Serializable {
     private int id;
     private String username;
     private String password;
-    private String gmail; // Thêm trường email
-    private String fullName; // Thêm trường fullName
+    private String gmail;
+    private String fullName;
     private boolean isOnline;
 
     public User() {
-        this.isOnline = false; // Mặc định là offline
+        this.isOnline = false;
     }
 
     public User(String username, String password) {
@@ -26,7 +26,7 @@ public class User implements Serializable { // Implement Serializable
         this.fullName = fullName;
     }
 
-    // Thêm getters & setters đầy đủ
+
     public int getId() {
         return id;
     }

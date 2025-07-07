@@ -4,12 +4,10 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.security.MessageDigest; // Thêm import
-import java.util.Arrays; // Thêm import
+import java.security.MessageDigest;
 
 public class EncryptionService {
 
-    // Đây là "mật khẩu chính" của bạn, có thể dài ngắn tùy ý.
     private static final String MASTER_PASSWORD = "MySuperSecretKeyForChatApp12345";
     private static final String ALGORITHM = "AES";
 
@@ -17,14 +15,8 @@ public class EncryptionService {
     private final SecretKeySpec keySpec;
 
     public EncryptionService() throws Exception {
-        // Sử dụng MessageDigest để tạo khóa có độ dài cố định
         MessageDigest sha = MessageDigest.getInstance("SHA-256");
         byte[] key = sha.digest(MASTER_PASSWORD.getBytes(StandardCharsets.UTF_8));
-        // SHA-256 sẽ luôn tạo ra mảng 32 byte, hoàn hảo cho AES-256.
-
-        // Nếu bạn muốn dùng AES-128 (khóa 16 byte), bạn có thể cắt mảng key:
-        // key = Arrays.copyOf(key, 16);
-
         this.keySpec = new SecretKeySpec(key, ALGORITHM);
         this.cipher = Cipher.getInstance(ALGORITHM);
     }
@@ -48,7 +40,6 @@ public class EncryptionService {
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
             System.err.println("Error decrypting data: " + e.getMessage());
-            // Nếu không giải mã được, trả về chuỗi lỗi thay vì null để tránh crash
             return "[Encrypted Message - Decryption Failed]";
         }
     }

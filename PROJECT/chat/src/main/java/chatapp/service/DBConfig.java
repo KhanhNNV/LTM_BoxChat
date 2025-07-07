@@ -10,7 +10,6 @@ public class DBConfig {
     private static final String PASSWORD = "";
 
     public static Connection getConnection() throws SQLException {
-        // Đảm bảo driver đã được load
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {

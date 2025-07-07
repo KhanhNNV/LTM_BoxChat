@@ -1,4 +1,3 @@
-// D:\Education\Lap_trinh_mang\PROJECT\chat\src\main\java\chatapp\model\Message.java
 package chatapp.model;
 
 import java.io.Serializable;
@@ -15,12 +14,7 @@ public class Message implements Serializable {
     private String fileName;
     private String fileType;
     private byte[] fileData;
-
     private boolean isFile;
-    // Thêm getters và setters
-
-
-    // Constructors, Getters, Setters
 
     public Message(){}
     // Constructors
@@ -42,7 +36,6 @@ public class Message implements Serializable {
         this.isFile = true;
     }
 
-    // Getters and Setters
     public boolean isFile() {
         return isFile;
     }
@@ -51,11 +44,6 @@ public class Message implements Serializable {
         isFile = file;
     }
 
-    public String getFormattedMessage() {
-        return fullname + ": " + content;
-    }
-
-    // Getters and setters for all fields...
     public int getId() {
         return id;
     }

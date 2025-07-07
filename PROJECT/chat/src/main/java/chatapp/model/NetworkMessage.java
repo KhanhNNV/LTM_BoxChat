@@ -3,10 +3,10 @@ package chatapp.model;
 import java.io.Serializable;
 
 public class NetworkMessage implements Serializable {
-    private static final long serialVersionUID = 1L; // Để đảm bảo tương thích khi serialize (tuần tự hóa)
+    private static final long serialVersionUID = 1L;
 
     private final MessageType type;
-    private final Object payload; // Dữ liệu đi kèm (User, Room, String, etc.)
+    private final Object payload;
 
     public NetworkMessage(MessageType type, Object payload) {
         this.type = type;
@@ -21,7 +21,7 @@ public class NetworkMessage implements Serializable {
         return payload;
     }
 
-    // Enum định nghĩa các loại yêu cầu/phản hồi
+
     public enum MessageType {
         // Client to Server Requests
         LOGIN_REQUEST,
@@ -37,9 +37,7 @@ public class NetworkMessage implements Serializable {
         GET_MEMBERS_GROUP_REQUEST,
         GET_USER_REQUEST,
         JOIN_EXISTING_ROOM_REQUEST,
-        SEND_FILES_REQUEST,
         REMOVE_MEMBER_REQUEST,
-        // Client gửi yêu cầu tham gia phòng đã tham gia trước đó
 
         // Server to Client Responses/Broadcasts
         LOGIN_SUCCESS,
@@ -50,7 +48,7 @@ public class NetworkMessage implements Serializable {
         ROOM_JOINED,
         ROOM_JOIN_FAILED,
         ROOM_DELETED,
-        RECEIVE_MESSAGE, // Tin nhắn từ người khác
+        RECEIVE_MESSAGE,
         USER_JOINED_ROOM,
         USER_LEFT_ROOM,
         ERROR_RESPONSE,
@@ -59,11 +57,9 @@ public class NetworkMessage implements Serializable {
         MEMBERS_GROUP_RESPONSE,
         USER_RESPONSE,
         JOIN_EXISTING_ROOM_RESPONSE,
-        RECEIVE_FILES, // Server phản hồi yêu cầu tham gia phòng đã tham gia
-        FILE_TRANSFER_ERROR,
-        MEMBER_REMOVED_SUCCESS, // Gửi cho leader để xác nhận
-        YOU_HAVE_BEEN_REMOVED, // Gửi riêng cho người bị xóa
-        USER_STATUS_UPDATE, // Server gửi cho client khi có người online/offline
+        MEMBER_REMOVED_SUCCESS,
+        YOU_HAVE_BEEN_REMOVED,
+        USER_STATUS_UPDATE,
         CHANGE_PASSWORD_REQUEST,
         CHANGE_PASSWORD_FAILURE,
         CHANGE_PASSWORD_SUCCESS,
@@ -81,11 +77,10 @@ public class NetworkMessage implements Serializable {
         SEARCH_ROOM_REQUEST,
         SEARCH_ROOM_RESPONSE,
         UPDATE_FULLNAME_REQUEST,
-        GET_UNREAD_COUNTS_REQUEST,      // Yêu cầu lấy số tin nhắn chưa đọc
-        GET_UNREAD_COUNTS_RESPONSE,    // Phản hồi với Map<groupId, unreadCount>
-        MARK_MESSAGES_READ_REQUEST,    // Yêu cầu đánh dấu đã đọc
-        MARK_MESSAGES_READ_RESPONSE,   // Xác nhận đã đánh dấu đọc
-        NEW_MESSAGE_NOTIFICATION       // Thông báo có tin nhắn mới
-        /// them code sua thong tin
+        GET_UNREAD_COUNTS_REQUEST,
+        GET_UNREAD_COUNTS_RESPONSE,
+        MARK_MESSAGES_READ_REQUEST,
+        MARK_MESSAGES_READ_RESPONSE,
+        NEW_MESSAGE_NOTIFICATION
     }
 }

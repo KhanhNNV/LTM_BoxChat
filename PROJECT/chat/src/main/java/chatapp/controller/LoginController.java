@@ -9,7 +9,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
-public class LoginController extends BaseController { // Kế thừa BaseController để nhận thông điệp từ server
+public class LoginController extends BaseController {
     @FXML
     private TextField usernameField;
     @FXML
@@ -33,8 +33,6 @@ public class LoginController extends BaseController { // Kế thừa BaseControl
             case LOGIN_SUCCESS:
                 showAlert(Alert.AlertType.INFORMATION, "Login Successful!");
                 try {
-                    // Lưu thông tin user đăng nhập vào Client instance nếu cần
-                    // Client.getInstance().setCurrentUser((User) message.getPayload());
                     Main.setRoot("chatapp/chatroom");
 
                 } catch (Exception e) {
@@ -45,7 +43,6 @@ public class LoginController extends BaseController { // Kế thừa BaseControl
                 showAlert(Alert.AlertType.ERROR, (String) message.getPayload());
                 break;
             default:
-                // Ignore other messages on this screen
                 break;
         }
     }

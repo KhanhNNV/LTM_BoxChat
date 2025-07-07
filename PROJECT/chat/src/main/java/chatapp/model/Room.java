@@ -3,18 +3,14 @@ package chatapp.model;
 import java.io.Serializable;
 import java.util.List;
 
-public class Room implements Serializable { // Implement Serializable
+public class Room implements Serializable {
     private int id;
     private String name;
     private String password;
     private int leaderId;
-    private transient List<String> memberEmails;
 
-    public Room() {
+    public Room() {}
 
-    }
-
-    // constructor, getters, setters...
     public Room(String name, String password) {
         this.name = name;
         this.password = password;
@@ -63,11 +59,4 @@ public class Room implements Serializable { // Implement Serializable
         this.password = password;
     }
 
-    public List<String> getMemberEmails() {
-        return memberEmails;
-    }
-
-    public void setMemberEmails(List<String> memberEmails) {
-        this.memberEmails = memberEmails;
-    }
 }

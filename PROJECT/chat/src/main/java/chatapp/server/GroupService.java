@@ -294,7 +294,6 @@ public class GroupService {
     }
 
     public boolean deleteGroup(int groupId) throws SQLException {
-        // 1. First delete all unread counters for this group
         String deleteUnreadSQL = "DELETE FROM user_group_unread WHERE group_id = ?";
         try (PreparedStatement stmt = connection.prepareStatement(deleteUnreadSQL)) {
             stmt.setInt(1, groupId);
@@ -307,7 +306,6 @@ public class GroupService {
             return stmt.executeUpdate() > 0;
         }
     }
-
 
 
     public boolean removeUserFromGroup(int userId, int groupId) throws SQLException {
